@@ -1,0 +1,34 @@
+:root {
+  /* Core Palette */
+  --bg-dark: #0b1120;       /* Deepest Navy (Main Background) */
+  --card-dark: #151e32;     /* Lighter Navy (Cards & Sidebar) */
+  
+  /* Accents */
+  --primary: #10b981;       /* Emerald Green */
+  --accent-blue: #3b82f6;   /* Bright Blue */
+  --accent-purple: #a855f7; /* Purple */
+  
+  /* Text */
+  --text-white: #ffffff;
+  --text-gray: #94a3b8;     /* Muted Blue-Gray */
+  
+  /* Dimensions & Borders */
+  --sidebar-width: 260px;
+  --border-radius: 16px;
+  --border-color: rgba(255, 255, 255, 0.05);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
+body { 
+  background-color: var(--bg-dark); 
+  color: var(--text-white); 
+  min-height: 100vh; 
+}
+
+a { text-decoration: none; color: inherit; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
