@@ -1,12 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
-  Camera, CameraOff, Mic, MicOff, MessageSquare, Power, Video, 
-  Download, AlertCircle, BarChart, Lock, CheckCircle2 
+  Camera, CameraOff, Mic, MicOff, Power, Download, 
+  AlertCircle, BarChart, Lock, CheckCircle2 
 } from 'lucide-react';
 import jsPDF from 'jspdf';
+import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import './Interview.css';
 
 const Interview = () => {
+  // --- Context & Hooks ---
+  const toast = useToast();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
   // --- State Management ---
   const [isInterviewStarted, setIsInterviewStarted] = useState(false);
   const [isCameraOn, setIsCameraOn] = useState(false);
@@ -27,7 +35,7 @@ const Interview = () => {
   const streamRef = useRef(null);
   const recognitionRef = useRef(null);
 
-  // --- 1. Initialize Media on Load (Pre-check) ---
+  // --- 1. Initialize Media on Load ---
   useEffect(() => {
     const initMedia = async () => {
       try {
@@ -40,7 +48,8 @@ const Interview = () => {
         setIsMicOn(true);
       } catch (err) {
         console.error("Media Access Denied:", err);
-        alert("CRITICAL: Camera and Microphone access are mandatory for this session.");
+        // Using toast inside useEffect caused loop previously because 'toast' was a dependency
+        toast.error("Media Access Denied: Camera and Microphone are required.");
       }
     };
     initMedia();
@@ -55,7 +64,8 @@ const Interview = () => {
       }
       window.speechSynthesis.cancel();
     };
-  }, []);
+    // FIX: Removed 'toast' from dependency array to prevent infinite loop
+  }, []); 
 
   // --- 2. Speech Recognition Setup ---
   useEffect(() => {
@@ -74,7 +84,7 @@ const Interview = () => {
             setTranscript(prev => [...prev, { role: "User", text: result }].slice(-500));
             setLiveUserText("");
             analyzeSentiment(result);
-            setQuestionTime(120); // Reset 2-min timer on answer
+            setQuestionTime(120); // Reset question timer on answer
           } else {
             interim += result;
             setLiveUserText(interim);
@@ -84,7 +94,7 @@ const Interview = () => {
     }
   }, []);
 
-  // --- 3. Dual Timer Logic ---
+  // --- 3. Timer Logic ---
   useEffect(() => {
     let interval;
     if (isInterviewStarted && totalTime > 0) {
@@ -98,17 +108,19 @@ const Interview = () => {
           return prev - 1;
         });
 
-        // Hidden Question Timer
+        // Question Timer
         setQuestionTime(prev => {
           if (prev <= 1) {
-            askQuestion("Time elapsed for this topic. Moving to the next question: How do you optimize React performance?");
-            return 120; // Reset
+            askQuestion("Time limit reached. Moving to next question: How do you handle state management in complex applications?");
+            toast.info("Time Limit Reached: Next Question.");
+            return 120; 
           }
           return prev - 1;
         });
       }, 1000);
     }
     return () => clearInterval(interval);
+    // FIX: Removed 'toast' from dependency array here as well
   }, [isInterviewStarted, totalTime]);
 
   // --- Helper Functions ---
@@ -130,30 +142,49 @@ const Interview = () => {
   };
 
   const toggleCamera = () => {
-    if (isInterviewStarted) return; // Locked during interview
+    if (isInterviewStarted) {
+        toast.warning("Camera is locked during the active session.");
+        return; 
+    }
     const track = streamRef.current?.getVideoTracks()[0];
     if (track) { 
       track.enabled = !track.enabled; 
-      setIsCameraOn(track.enabled); 
+      setIsCameraOn(track.enabled);
+      track.enabled ? toast.success("Camera Enabled") : toast.info("Camera Disabled");
     }
   };
 
   const toggleMic = () => {
-    if (isInterviewStarted) return; // Locked during interview
+    if (isInterviewStarted) {
+        toast.warning("Microphone is locked during the active session.");
+        return; 
+    }
     const track = streamRef.current?.getAudioTracks()[0];
     if (track) { 
       track.enabled = !track.enabled; 
-      setIsMicOn(track.enabled); 
+      setIsMicOn(track.enabled);
+      track.enabled ? toast.success("Microphone Enabled") : toast.info("Microphone Disabled");
     }
   };
 
   const startInterview = () => {
-    if (!isCameraOn || !isMicOn) {
-      alert("Please enable both Camera and Mic to start.");
+    // 1. AUTH CHECK
+    if (!isAuthenticated) {
+      toast.error("Login Required: Please sign in to start an interview.");
+      navigate('/auth');
       return;
     }
+
+    // 2. HARDWARE CHECK
+    if (!isCameraOn || !isMicOn) {
+      toast.warning("Hardware Check Failed: Please enable both Camera and Mic.");
+      return;
+    }
+
+    // 3. START
     setIsInterviewStarted(true);
     if (recognitionRef.current) recognitionRef.current.start();
+    toast.success("Interview Started. Good luck!");
     setTimeout(() => askQuestion("Welcome. All media is now locked. You have 2 minutes per question. Please explain your experience with React and Frontend development."), 1000);
   };
 
@@ -161,6 +192,7 @@ const Interview = () => {
     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
     if (recognitionRef.current) recognitionRef.current.stop();
     setIsInterviewStarted(false);
+    toast.info("Interview Ended. Transcript is ready.");
   };
 
   const downloadPDF = () => {
@@ -173,17 +205,16 @@ const Interview = () => {
     transcript.forEach(t => {
       const line = `${t.role}: ${t.text}`;
       const splitLines = doc.splitTextToSize(line, 170);
-      
       if (y + splitLines.length * 7 > 280) {
         doc.addPage();
         y = 20;
       }
-      
       doc.text(splitLines, 20, y);
       y += (splitLines.length * 7) + 5;
     });
     
     doc.save("Interview_Report.pdf");
+    toast.success("Transcript Downloaded.");
   };
 
   // --- Render ---
@@ -191,13 +222,11 @@ const Interview = () => {
     <div className="interview-container animated-fade">
       <div className="interview-layout">
         
-        {/* LEFT PANEL: VIDEO FEED */}
+        {/* LEFT PANEL: VIDEO */}
         <div className="video-panel glass-card">
           <div className="video-header">
             {isInterviewStarted && (
-              <div className="sentiment-tag">
-                <BarChart size={14}/> {sentiment}
-              </div>
+              <div className="sentiment-tag"><BarChart size={14}/> {sentiment}</div>
             )}
             <div className="timer-badge">
               Total: {Math.floor(totalTime/60)}:{String(totalTime%60).padStart(2,'0')}
@@ -206,28 +235,17 @@ const Interview = () => {
 
           <div className="video-wrapper">
             <video ref={videoRef} autoPlay playsInline muted />
-            
-            {/* Overlay if Camera is manually turned off before start */}
             {!isCameraOn && (
               <div className="blocked-overlay">
                 <CameraOff size={48} />
                 <p>Camera Access Required</p>
               </div>
             )}
-
             <div className={`media-controls ${isInterviewStarted ? 'locked' : ''}`}>
-              <button 
-                className={isCameraOn ? "on" : "off"} 
-                onClick={toggleCamera} 
-                disabled={isInterviewStarted}
-              >
+              <button className={isCameraOn ? "on" : "off"} onClick={toggleCamera} disabled={isInterviewStarted}>
                 {isCameraOn ? <Camera size={20}/> : <CameraOff size={20}/>}
               </button>
-              <button 
-                className={isMicOn ? "on" : "off"} 
-                onClick={toggleMic} 
-                disabled={isInterviewStarted}
-              >
+              <button className={isMicOn ? "on" : "off"} onClick={toggleMic} disabled={isInterviewStarted}>
                 {isMicOn ? <Mic size={20}/> : <MicOff size={20}/>}
               </button>
             </div>
@@ -240,9 +258,8 @@ const Interview = () => {
             {isInterviewStarted ? (
               <>
                 <div className="ai-bubble animated-fade">
-                  {currentQuestion || "Initializing AI Question..."}
+                  {currentQuestion || "Initializing AI..."}
                 </div>
-                
                 <div className="transcript-container">
                   <label className="transcript-label">Live Transcript</label>
                   <div className="transcript-scroll">
@@ -252,9 +269,7 @@ const Interview = () => {
                       </p>
                     ))}
                     {liveUserText && (
-                      <p className="user interim">
-                        <strong>User:</strong> {liveUserText}...
-                      </p>
+                      <p className="user interim"><strong>User:</strong> {liveUserText}...</p>
                     )}
                   </div>
                 </div>
@@ -264,7 +279,6 @@ const Interview = () => {
                 <Lock size={60} className="lock-icon" />
                 <h2>Media Verification</h2>
                 <p>Hardware check required to initiate session.</p>
-                
                 <div className="system-check">
                   <div className={`check-item ${isCameraOn ? 'pass' : 'fail'}`}>
                     {isCameraOn ? <CheckCircle2 size={18}/> : <AlertCircle size={18}/>} Camera
@@ -273,7 +287,6 @@ const Interview = () => {
                     {isMicOn ? <CheckCircle2 size={18}/> : <AlertCircle size={18}/>} Mic
                   </div>
                 </div>
-
                 <button 
                   className={`btn-start ${(!isCameraOn || !isMicOn) ? 'disabled' : ''}`} 
                   onClick={startInterview} 
@@ -284,15 +297,12 @@ const Interview = () => {
               </div>
             )}
           </div>
-
-          {/* Download Button (Only after finish or if data exists) */}
           {(totalTime === 0 || (!isInterviewStarted && transcript.length > 0)) && (
             <button className="btn-download" onClick={downloadPDF}>
               <Download size={18}/> Download Transcript
             </button>
           )}
         </div>
-
       </div>
     </div>
   );

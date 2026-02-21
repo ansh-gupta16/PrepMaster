@@ -1,18 +1,27 @@
 import React, { useState } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import './Layout.css';
 import { 
-  LayoutDashboard, 
-  BrainCircuit, 
-  Terminal, 
-  Bot, 
-  Menu, 
-  X, 
-  GraduationCap 
+  LayoutDashboard, BrainCircuit, Terminal, Bot, Menu, X, 
+  GraduationCap, User, LogIn 
 } from 'lucide-react';
 
 const Layout = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  const toast = useToast();
+
+  // Intercept click for restricted items
+  const handleRestrictedClick = (e) => {
+    if (!isAuthenticated) {
+      e.preventDefault(); // STOP navigation
+      toast.error("Locked: Please Login to access this feature.");
+      navigate('/auth'); // Redirect to login
+    }
+  };
 
   return (
     <div className="app-container">
@@ -35,26 +44,61 @@ const Layout = () => {
         </div>
 
         <div className="nav-menu">
+          {/* PUBLIC: Dashboard (No onClick handler) */}
           <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
             <LayoutDashboard size={20} /> Dashboard
           </NavLink>
-          <NavLink to="/assessment" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-            <BrainCircuit size={20} /> Assessments
-          </NavLink>
-          <NavLink to="/simulator" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+
+          {/* LOCKED: Simulator */}
+          <NavLink 
+            to="/simulator" 
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={handleRestrictedClick} // Locks this button
+          >
             <Terminal size={20} /> Simulator
           </NavLink>
-          <NavLink to="/interview" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+
+          {/* LOCKED: Assessments */}
+          <NavLink 
+            to="/assessment" 
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={handleRestrictedClick} // Locks this button
+          >
+            <BrainCircuit size={20} /> Assessments
+          </NavLink>
+
+          {/* LOCKED: AI Interview */}
+          <NavLink 
+            to="/interview" 
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={handleRestrictedClick} // Locks this button
+          >
             <Bot size={20} /> AI Interview
           </NavLink>
+          
+          {/* LOCKED: Profile (Only shows if logged in anyway) */}
+          {isAuthenticated && (
+            <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <User size={20} /> My Profile
+            </NavLink>
+          )}
         </div>
 
-        <div className="user-profile">
-          <div className="avatar">H</div>
-          <div className="user-details">
-            <span className="name">Harsh</span>
-            <span className="role">Student</span>
-          </div>
+        {/* Sidebar Footer */}
+        <div className="sidebar-footer">
+          {isAuthenticated ? (
+            <div className="user-profile">
+              <div className="avatar">{user?.name?.charAt(0) || 'U'}</div>
+              <div className="user-details">
+                <span className="name">{user?.name || 'User'}</span>
+                <span className="role">{user?.role || 'Student'}</span>
+              </div>
+            </div>
+          ) : (
+            <button className="btn-sidebar-login" onClick={() => navigate('/auth')}>
+              <LogIn size={20} /> Login Now
+            </button>
+          )}
         </div>
       </aside>
 
@@ -63,7 +107,6 @@ const Layout = () => {
         <Outlet />
       </div>
 
-      {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div className="overlay" onClick={() => setSidebarOpen(false)}></div>
       )}
