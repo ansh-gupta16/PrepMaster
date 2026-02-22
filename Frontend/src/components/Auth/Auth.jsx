@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext'; // Import Context
 import './Auth.css';
 
-const Auth = ({ onLogin }) => {
+const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  
+  const { login } = useAuth(); // Access login function from context
+  const navigate = useNavigate(); // For redirecting after login
   
   const [formData, setFormData] = useState({
     name: '',
@@ -15,8 +20,6 @@ const Auth = ({ onLogin }) => {
   // Handle Input Changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    // Logic 1: Enforce lowercase for email immediately
     if (name === 'email') {
       setFormData(prev => ({ ...prev, [name]: value.toLowerCase() }));
     } else {
@@ -24,24 +27,59 @@ const Auth = ({ onLogin }) => {
     }
   };
 
+  // --- DUMMY IDP LOGIC ---
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Logic 1: Check for "@" symbol
     if (!formData.email.includes('@')) {
       alert("Invalid Email: Must contain '@' symbol.");
       return;
     }
 
-    // Logic 2: Password Length (Min 8, Max 15)
     if (formData.password.length < 8 || formData.password.length > 15) {
       alert("Password Validation Failed: Must be between 8 and 15 characters.");
       return;
     }
 
-    // If validations pass, proceed
-    console.log("Form Submitted", formData);
-    if(onLogin) onLogin(); 
+    // Retrieve our "Database" from Local Storage
+    const usersDB = JSON.parse(localStorage.getItem('dummy_users_db')) || [];
+
+    if (isLogin) {
+      // SIGN IN LOGIC
+      const existingUser = usersDB.find(
+        (u) => u.email === formData.email && u.password === formData.password
+      );
+
+      if (existingUser) {
+        // Successful Login
+        login({ name: existingUser.name, email: existingUser.email, role: "Student" });
+        navigate('/'); // Redirect to Dashboard
+      } else {
+        // Failed Login
+        alert("Invalid email or password. Please try again or create an account.");
+      }
+
+    } else {
+      // SIGN UP LOGIC
+      const emailExists = usersDB.some((u) => u.email === formData.email);
+
+      if (emailExists) {
+        alert("This email is already registered. Please sign in instead.");
+      } else {
+        // Create new user and save to "Database"
+        const newUser = { 
+          name: formData.name, 
+          email: formData.email, 
+          password: formData.password 
+        };
+        
+        localStorage.setItem('dummy_users_db', JSON.stringify([...usersDB, newUser]));
+        
+        // Log them in immediately after signing up
+        login({ name: newUser.name, email: newUser.email, role: "Student" });
+        navigate('/'); // Redirect to Dashboard
+      }
+    }
   };
 
   return (
@@ -129,15 +167,13 @@ const Auth = ({ onLogin }) => {
           </div>
         </div>
 
-        {/* RIGHT SIDE: VISUAL (Restored & Cleaned) */}
+        {/* RIGHT SIDE: VISUAL */}
         <div className="auth-visual-section">
           <div className="visual-content">
-            {/* Logo Removed as requested */}
             <h2>Master Your Interviews</h2>
             <p>
               AI-driven mock interviews, real-time feedback, and comprehensive skill assessments.
             </p>
-            {/* Floating Cards Removed as requested */}
           </div>
         </div>
 

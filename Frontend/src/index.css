@@ -1,34 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 :root {
-  /* Core Palette */
-  --bg-dark: #0b1120;       /* Deepest Navy (Main Background) */
-  --card-dark: #151e32;     /* Lighter Navy (Cards & Sidebar) */
+  /* --- 1. THE NEW GLASSMORPHISM BASE COLORS --- */
+  --background: hsl(220, 15%, 8%);
+  --foreground: hsl(210, 15%, 90%);
+  --card: hsl(220, 14%, 12%);
+  --primary-theme: hsl(175, 65%, 45%);
+
+  /* --- 2. YOUR EXISTING VARIABLES (Mapped to new colors so nothing breaks!) --- */
+  --bg-dark: var(--background); 
+  --card-dark: var(--card); 
   
   /* Accents */
-  --primary: #10b981;       /* Emerald Green */
-  --accent-blue: #3b82f6;   /* Bright Blue */
-  --accent-purple: #a855f7; /* Purple */
+  --primary: var(--primary-theme); 
+  --accent-blue: hsl(190, 55%, 42%); 
+  --accent-purple: #a855f7; /* Retained your original purple */
   
   /* Text */
-  --text-white: #ffffff;
-  --text-gray: #94a3b8;     /* Muted Blue-Gray */
+  --text-white: var(--foreground);
+  --text-gray: hsl(215, 10%, 50%); 
   
   /* Dimensions & Borders */
   --sidebar-width: 260px;
   --border-radius: 16px;
-  --border-color: rgba(255, 255, 255, 0.05);
+  --border-color: hsla(210, 15%, 90%, 0.07);
+
+  /* --- 3. NEW GLASSMORPHISM TOKENS & GRADIENTS --- */
+  --glass-bg: hsla(220, 14%, 12%, 0.5);
+  --glass-border: hsla(210, 15%, 90%, 0.07);
+  --glass-blur: 20px;
+  --glass-shadow: 0 8px 32px hsla(220, 20%, 3%, 0.5);
+
+  --gradient-primary: linear-gradient(135deg, hsl(175, 65%, 45%), hsl(190, 55%, 42%));
+  --gradient-card: linear-gradient(135deg, hsla(220, 14%, 14%, 0.65), hsla(220, 12%, 9%, 0.4));
+  --gradient-accent: linear-gradient(135deg, hsl(175, 65%, 45%), hsl(175, 60%, 58%));
+
+  /* Fonts */
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+/* --- 4. BASE RESETS --- */
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+}
 
 body { 
   background-color: var(--bg-dark); 
   color: var(--text-white); 
   min-height: 100vh; 
+  font-family: var(--font-body);
 }
 
-a { text-decoration: none; color: inherit; }
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
 
-/* Custom Scrollbar */
+a { 
+  text-decoration: none; 
+  color: inherit; 
+}
+
+/* --- 5. CUSTOM SCROLLBAR (Blended with new theme) --- */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-dark); }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: hsl(220, 12%, 18%); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(220, 12%, 25%); }
+
+/* --- 6. NEW UTILITY CLASSES (Animations & Glass Cards) --- */
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* This will upgrade all your existing .glass-card elements */
+.glass-card {
+  background: var(--gradient-card);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--border-radius);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px hsla(230, 40%, 5%, 0.6);
+  border-color: hsla(325, 85%, 55%, 0.3);
+}
+
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px hsla(175, 65%, 45%, 0.25); }
+  50% { box-shadow: 0 0 30px hsla(175, 65%, 45%, 0.5); }
+}
+.pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+.animate-float { animation: float 3s ease-in-out infinite; }
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent 0%, hsla(210, 15%, 90%, 0.06) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
