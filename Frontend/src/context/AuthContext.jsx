@@ -1,36 +1,44 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import axios from "axios";
 
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  // Check local storage on initial load to see if a user is already logged in
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [isAuthenticated, setIsAuthenticated] = useState(!!token);
 
+  // 🔥 Attach token automatically
   useEffect(() => {
-    const savedSession = localStorage.getItem('active_session');
-    if (savedSession) {
+    if (token) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      localStorage.setItem("token", token);
       setIsAuthenticated(true);
-      setUser(JSON.parse(savedSession));
+    } else {
+      delete axios.defaults.headers.common["Authorization"];
+      localStorage.removeItem("token");
+      setIsAuthenticated(false);
     }
-  }, []);
+  }, [token]);
 
-  const login = (userData) => {
-    setIsAuthenticated(true);
+  // 🔐 Login
+  const login = (userData, jwtToken) => {
     setUser(userData);
-    localStorage.setItem('active_session', JSON.stringify(userData)); // Save session
+    setToken(jwtToken);
   };
 
+  // 🚪 Logout
   const logout = () => {
-    setIsAuthenticated(false);
     setUser(null);
-    localStorage.removeItem('active_session'); // Clear session
+    setToken(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, user, token, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

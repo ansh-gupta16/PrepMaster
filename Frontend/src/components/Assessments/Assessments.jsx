@@ -1,263 +1,462 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  BookOpen, Layers, BarChart3, ChevronLeft, ArrowRight, CheckCircle2, 
-  AlertCircle, PenTool, Timer, Eye, HelpCircle 
-} from 'lucide-react';
-import './Assessments.css';
+import React, { useState, useEffect, useRef } from "react";
+import {
+  BookOpen,
+  Layers,
+  BarChart3,
+  ChevronLeft,
+  ArrowRight,
+  PenTool,
+  Timer,
+} from "lucide-react";
+import "./Assessments.css";
+import axios from "axios";
+
+axios.defaults.baseURL = "http://localhost:5000";
 
 const Assessments = () => {
+
   const [activeSubject, setActiveSubject] = useState(null);
   const [difficulty, setDifficulty] = useState(null);
+  const [assessmentData, setAssessmentData] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
-  const [assessmentData, setAssessmentData] = useState([]); 
   const [customTopic, setCustomTopic] = useState("");
-  const [userAnswers, setUserAnswers] = useState(Array(10).fill(null));
-  const [statusTracker, setStatusTracker] = useState(Array(10).fill('not-visited')); 
-  const [showResults, setShowResults] = useState(false);
-  const [reviewMode, setReviewMode] = useState(false);
-  const [error, setError] = useState("");
-  const [bestScores, setBestScores] = useState({});
+  const [userAnswers, setUserAnswers] = useState([]);
+  const [questionFeedback, setQuestionFeedback] = useState([]);
+  const [loadingReview, setLoadingReview] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [backendResult, setBackendResult] = useState(null);
+
   const timerRef = useRef(null);
 
   const subjects = [
-    { id: 'dsa', title: 'Data Structures & Algorithms', icon: <Layers size={24} />, color: 'blue' },
-    { id: 'dbms', title: 'Database Management', icon: <BookOpen size={24} />, color: 'green' },
-    { id: 'os', title: 'Operating Systems', icon: <BarChart3 size={24} />, color: 'purple' },
-    { id: 'self', title: 'Self Assessment', icon: <PenTool size={24} />, color: 'purple', isCustom: true }
+    { id: "dsa", title: "Data Structures & Algorithms", icon: <Layers size={24} />, color: "blue" },
+    { id: "dbms", title: "Database Management", icon: <BookOpen size={24} />, color: "green" },
+    { id: "os", title: "Operating Systems", icon: <BarChart3 size={24} />, color: "purple" },
+    { id: "self", title: "Self Assessment", icon: <PenTool size={24} />, color: "purple", isCustom: true },
   ];
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  const startAssessment = (level) => {
-    if (activeSubject.id === 'self' && !customTopic.trim()) {
-      setError("Please enter a topic for your self-assessment.");
-      return;
-    }
-    let duration = level === 'Easy' ? 25 * 60 : level === 'Medium' ? 45 * 60 : 70 * 60; 
-    setTimeLeft(duration);
-    setDifficulty(level);
-    const questions = [];
-    const numSubjective = Math.floor(Math.random() * 3) + 1; 
-    const numMCQ = 10 - numSubjective;
-    const topicLabel = activeSubject.id === 'self' ? customTopic : activeSubject.title;
-
-    for (let i = 0; i < numMCQ; i++) {
-      questions.push({ 
-        type: 'mcq', 
-        text: `[${level}] ${topicLabel} MCQ question ${i + 1}.`, 
-        options: ['Option A', 'Option B', 'Option C', 'Option D'],
-        correctAnswer: 'Option A',
-        explanation: "Correct logic requires Option A for optimization."
-      });
-    }
-    for (let i = 0; i < numSubjective; i++) {
-      questions.push({ 
-        type: 'subjective', 
-        text: `[${level}] Logic: Describe concept ${i + 1} for ${topicLabel}.`,
-        correctAnswer: "Detailed logic with O(n) complexity.",
-        explanation: "Points are awarded for detailed descriptions (15+ characters)."
-      });
-    }
-    setAssessmentData(questions.sort(() => Math.random() - 0.5));
-    setCurrentStep(0);
-    setUserAnswers(Array(10).fill(null));
-    setStatusTracker(Array(10).fill('not-visited'));
-    setShowResults(false);
-    setReviewMode(false);
-    setError("");
+  const formatToBullets = (text) => {
+    if (!text) return null;
+    return text
+      .split(/\n|\d+\./)
+      .filter(line => line.trim() !== "")
+      .map((line, index) => (
+        <li key={index}>{line.trim()}</li>
+      ));
   };
+
+  /*
+  ============================
+  START ASSESSMENT
+  ============================
+  */
+
+  const startAssessment = async (level) => {
+    try {
+
+      if (activeSubject.id === "self" && !customTopic.trim()) return;
+
+      setLoadingAI(true);
+
+      const topic =
+        activeSubject.id === "self"
+          ? customTopic
+          : activeSubject.title;
+
+      const res = await axios.post("/api/assessments/generate", {
+        topic,
+        difficulty: level,
+      });
+
+      const questions = res?.data?.questions || [];
+
+      setAssessmentData(questions);
+      setUserAnswers(Array(questions.length).fill(null));
+      setQuestionFeedback(Array(questions.length).fill(null));
+      setCurrentStep(0);
+      setDifficulty(level);
+
+      const duration =
+        level === "Easy" ? 25 * 60 :
+        level === "Medium" ? 45 * 60 :
+        70 * 60;
+
+      setTimeLeft(duration);
+      setLoadingAI(false);
+
+    } catch (err) {
+      console.log(err);
+      setLoadingAI(false);
+    }
+  };
+
+  /*
+  ============================
+  TIMER
+  ============================
+  */
 
   useEffect(() => {
-    if (difficulty && timeLeft > 0 && !showResults) {
-      timerRef.current = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-    } else if (timeLeft === 0 && difficulty && !showResults) {
-      finishAssessment();
-    }
+    if (!difficulty) return;
+
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          finishAssessment();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
     return () => clearInterval(timerRef.current);
-  }, [difficulty, timeLeft, showResults]);
+  }, [difficulty]);
+
+  /*
+  ============================
+  PER QUESTION REVIEW
+  ============================
+  */
+
+  const submitCurrentQuestion = async () => {
+    try {
+
+      const q = assessmentData[currentStep];
+      const ans = userAnswers[currentStep];
+
+      if (!ans) return;
+
+      setLoadingReview(true);
+
+      const res = await axios.post(
+        "/api/assessments/review-question",
+        { question: q, answer: ans }
+      );
+
+      const updated = [...questionFeedback];
+      updated[currentStep] = res.data.review;
+      setQuestionFeedback(updated);
+
+      setLoadingReview(false);
+
+    } catch (err) {
+      console.log(err);
+      setLoadingReview(false);
+    }
+  };
 
   const handleNext = () => {
-    const currentAnswer = userAnswers[currentStep];
-    const newTracker = [...statusTracker];
-    newTracker[currentStep] = (currentAnswer && String(currentAnswer).trim() !== "") ? 'completed' : 'unanswered';
-    setStatusTracker(newTracker);
-    if (currentStep < 9) setCurrentStep(currentStep + 1);
+    if (currentStep < assessmentData.length - 1)
+      setCurrentStep(currentStep + 1);
   };
 
-  const skipQuestion = () => {
-    const newTracker = [...statusTracker];
-    newTracker[currentStep] = 'skipped';
-    setStatusTracker(newTracker);
-    if (currentStep < 9) setCurrentStep(currentStep + 1);
+  const handleSkip = () => {
+    if (currentStep < assessmentData.length - 1)
+      setCurrentStep(currentStep + 1);
+    else
+      finishAssessment();
   };
 
-  const finishAssessment = () => {
-    const anyEmpty = userAnswers.some(ans => ans === null || String(ans).trim() === "");
-    if (anyEmpty && timeLeft > 0) {
-      setError("Please complete all questions before finishing.");
-      return;
+  /*
+  ============================
+  FINAL SUBMIT
+  ============================
+  */
+
+  const finishAssessment = async () => {
+    try {
+
+      clearInterval(timerRef.current);
+
+      const topic =
+        activeSubject?.id === "self"
+          ? customTopic
+          : activeSubject?.title;
+
+      const res = await axios.post("/api/assessments/submit", {
+        topic,
+        questions: assessmentData,
+        answers: userAnswers,
+        difficulty,
+      });
+
+      setBackendResult(res.data);
+      setShowResults(true);
+
+    } catch (err) {
+      console.log(err);
     }
-    clearInterval(timerRef.current);
-
-    const finalScore = assessmentData.reduce((total, q, i) => {
-      const userAns = userAnswers[i];
-      if (q.type === 'mcq') {
-        return userAns === q.correctAnswer ? total + 1 : total;
-      } else {
-        return (userAns && userAns.trim().length > 15) ? total + 1 : total;
-      }
-    }, 0); // Corrected starting value
-
-    const key = activeSubject.id === 'self' ? `self-${customTopic}-${difficulty}` : `${activeSubject.id}-${difficulty}`;
-    if (!bestScores[key] || finalScore > bestScores[key]) {
-      setBestScores({ ...bestScores, [key]: finalScore });
-    }
-    setShowResults(true);
   };
 
-  if (reviewMode) {
-    return (
-      <div className="assessment-active slide-in-right">
-        <header className="assessment-header">
-          <button className="back-link" onClick={() => setReviewMode(false)}><ChevronLeft size={18} /> Results</button>
-          <h2>Review</h2>
-        </header>
-        <div className="assessment-window glass-card">
-          <div className="review-scroll-area">
-            {assessmentData.map((q, i) => {
-              const isCorrect = q.type === 'mcq' ? userAnswers[i] === q.correctAnswer : (userAnswers[i] && userAnswers[i].trim().length > 15);
-              return (
-                <div key={i} className={`review-item ${isCorrect ? 'correct-border' : 'wrong-border'}`}>
-                  <div className="review-header-row">
-                    <span className={`q-label ${q.type}`}>{i + 1}. {q.type.toUpperCase()}</span>
-                    <div className="score-tag">{isCorrect ? "+1 Mark" : "+0 Marks"}</div>
-                  </div>
-                  <p className="question-text small">{q.text}</p>
-                  <div className="answer-comparison">
-                    <div className={`ans-box ${isCorrect ? 'correct-bg' : 'wrong-bg'}`}>
-                      <label>Your Input:</label>
-                      <p>{userAnswers[i] || "Skipped"}</p>
-                    </div>
-                    {!isCorrect && <div className="ans-box actual-correct"><label>Correct Logic:</label><p>{q.correctAnswer}</p></div>}
-                  </div>
-                  <div className="explanation-box">
-                    <div className="exp-header"><HelpCircle size={16} /><strong>Insight:</strong></div>
-                    <p>{q.explanation}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  /*
+  ============================
+  RESULTS SCREEN
+  ============================
+  */
 
-  if (showResults) {
-    const scoreKey = activeSubject.id === 'self' ? `self-${customTopic}-${difficulty}` : `${activeSubject.id}-${difficulty}`;
-    return (
-      <div className="assessment-active slide-in-right">
-        <div className="assessment-window glass-card results-container">
-          <CheckCircle2 size={80} className="success-icon" />
-          <h1>Completed</h1>
-          <p className="final-score-text">Score: <span>{bestScores[scoreKey]}/10</span></p>
-          <div className="results-actions">
-            <button className="btn-secondary" onClick={() => setReviewMode(true)}><Eye size={18} /> Review</button>
-            <button className="btn-submit" onClick={() => { setDifficulty(null); setShowResults(false); setCustomTopic(""); }}>Exit</button>
-          </div>
+  if (showResults && backendResult) {
+
+  return (
+    <div className="assessment-active slide-in-right">
+      <div className="assessment-window glass-card results-container">
+
+        <h1>🎉 Assessment Completed</h1>
+
+        <p className="final-score-text">
+          Score: <span>{backendResult.percentage}%</span>
+        </p>
+
+        <div className="ai-card">
+          <h3>📊 Performance Summary</h3>
+          <p>✅ Correct: {backendResult.correct}</p>
+          <p>❌ Incorrect: {backendResult.incorrect}</p>
+          <p>⏭ Skipped: {backendResult.skipped}</p>
         </div>
+
+        {backendResult.detailedReview.length > 0 && (
+          <div className="ai-card">
+            <h3>📘 Detailed Review</h3>
+
+            {backendResult.detailedReview.map((item, index) => (
+              <div key={index} className="review-item">
+
+                <p><strong>Question:</strong> {item.question}</p>
+
+                <p style={{ color: "#ff6b6b" }}>
+                  <strong>Your Answer:</strong> {item.userAnswer}
+                </p>
+
+                <p style={{ color: "lightgreen" }}>
+                  <strong>Correct Answer:</strong> {item.correctAnswer}
+                </p>
+
+                <p>
+                  <strong>Why Correct:</strong> {item.explanation}
+                </p>
+
+                <hr style={{ margin: "15px 0" }} />
+
+              </div>
+            ))}
+
+          </div>
+        )}
+
+        <button
+          className="btn-submit"
+          onClick={() => {
+            setShowResults(false);
+            setDifficulty(null);
+            setActiveSubject(null);
+          }}
+        >
+          Back to Assessments
+        </button>
+
       </div>
-    );
-  }
+    </div>
+  );
+}
+
+  /*
+  ============================
+  QUESTION SCREEN
+  ============================
+  */
 
   if (difficulty) {
-    const q = assessmentData[currentStep];
+
+    const q = assessmentData?.[currentStep];
+
     return (
       <div className="assessment-active slide-in-right">
         <header className="assessment-header">
-          <button className="back-link" onClick={() => { if(window.confirm("Exit?")) setDifficulty(null); }}><ChevronLeft size={18} /> Exit</button>
+          <button className="back-link" onClick={() => setDifficulty(null)}>
+            <ChevronLeft size={18} /> Exit
+          </button>
+
           <div className="timer-display">
-            <Timer size={20} className={timeLeft < 60 ? 'timer-warning' : ''} />
-            <span className={timeLeft < 60 ? 'timer-warning' : ''}>{formatTime(timeLeft)}</span>
+            <Timer size={20} />
+            <span>{formatTime(timeLeft)}</span>
           </div>
-          <span className={`diff-pill ${difficulty.toLowerCase()}`}>{difficulty}</span>
+
+          <span className={`diff-pill ${difficulty.toLowerCase()}`}>
+            {difficulty}
+          </span>
         </header>
+
         <div className="assessment-window glass-card">
-          <div className="progress-stepper">
-            {assessmentData.map((_, i) => (
-              <div key={i} className={`step-dot ${currentStep === i ? 'active' : ''} ${statusTracker[i]}`} onClick={() => setCurrentStep(i)}>{i + 1}</div>
-            ))}
-          </div>
-          <div className="question-area">
-            <p className="question-text">{q.text}</p>
-            {q.type === 'mcq' ? (
-              <div className="options-grid">
-                {q.options.map((opt, i) => (
-                  <button key={i} className={`option-btn ${userAnswers[currentStep] === opt ? 'selected' : ''}`} onClick={() => {
-                    const updated = [...userAnswers]; updated[currentStep] = opt; setUserAnswers(updated);
-                  }}>{opt}</button>
-                ))}
-              </div>
-            ) : (
-              <textarea className="subjective-input" value={userAnswers[currentStep] || ""} onChange={(e) => {
-                const updated = [...userAnswers]; updated[currentStep] = e.target.value; setUserAnswers(updated);
-              }} placeholder="Enter logic..." />
-            )}
-          </div>
-          {error && <div className="error-msg"><AlertCircle size={18} /> {error}</div>}
+
+          <p className="question-text">
+            Q{currentStep + 1} / {assessmentData.length}. {q?.text}
+          </p>
+
+          {q?.options ? (
+            <div className="options-grid">
+              {q.options.map((opt, i) => (
+                <button
+                  key={i}
+                  disabled={questionFeedback[currentStep]}
+                  className={`option-btn ${
+                    userAnswers[currentStep] === opt ? "selected" : ""
+                  }`}
+                  onClick={() => {
+                    const updated = [...userAnswers];
+                    updated[currentStep] = opt;
+                    setUserAnswers(updated);
+                  }}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <textarea
+              disabled={questionFeedback[currentStep]}
+              className="subjective-input"
+              value={userAnswers[currentStep] || ""}
+              onChange={(e) => {
+                const updated = [...userAnswers];
+                updated[currentStep] = e.target.value;
+                setUserAnswers(updated);
+              }}
+            />
+          )}
+
+          {!questionFeedback[currentStep] && (
+            <button
+              className="btn-submit small-submit"
+              onClick={submitCurrentQuestion}
+            >
+              {loadingReview ? "AI Reviewing..." : "Submit & Get Feedback"}
+            </button>
+          )}
+
+          {questionFeedback[currentStep] && (
+  <div className="ai-review-card">
+
+    {questionFeedback[currentStep].status === "correct" ? (
+      <p style={{ color: "lightgreen", fontWeight: "bold" }}>
+        ✅ Correct Answer
+      </p>
+    ) : (
+      <>
+        <p style={{ color: "#ff6b6b", fontWeight: "bold" }}>
+          ❌ Your Answer: {questionFeedback[currentStep].userAnswer}
+        </p>
+
+        <p style={{ color: "lightgreen", fontWeight: "bold" }}>
+          ✅ Correct Answer: {questionFeedback[currentStep].correctAnswer}
+        </p>
+
+        <p style={{ marginTop: "8px" }}>
+          💡 {questionFeedback[currentStep].explanation}
+        </p>
+      </>
+    )}
+
+  </div>
+)}
           <footer className="question-footer">
-            <button className="btn-secondary" onClick={skipQuestion}>Skip</button>
-            {currentStep < 9 ? (
-              <button className="btn-submit" onClick={handleNext}>Next <ArrowRight size={18} /></button>
+
+            <button className="btn-secondary" onClick={handleSkip}>
+              Skip
+            </button>
+
+            {currentStep < assessmentData.length - 1 ? (
+              <button
+                className="btn-submit"
+                disabled={!questionFeedback[currentStep]}
+                onClick={handleNext}
+              >
+                Next <ArrowRight size={18} />
+              </button>
             ) : (
-              <button className="btn-submit finish" onClick={finishAssessment}>Finish</button>
+              <button
+                className="btn-submit finish"
+                onClick={finishAssessment}
+              >
+                Finish
+              </button>
             )}
+
           </footer>
+
         </div>
       </div>
     );
   }
+
+  /*
+  ============================
+  SUBJECT SELECTION
+  ============================
+  */
 
   if (activeSubject) {
     return (
       <div className="difficulty-selection animated-fade">
-        <button className="back-link" onClick={() => setActiveSubject(null)}><ChevronLeft size={18} /> Back</button>
+        <button className="back-link" onClick={() => setActiveSubject(null)}>
+          <ChevronLeft size={18} /> Back
+        </button>
+
         <div className="selection-header">
           <h1>{activeSubject.title}</h1>
-          {activeSubject.id === 'self' && (
-            <input type="text" className="subjective-input custom-topic-field" placeholder="Topic: e.g. React, SQL" value={customTopic} onChange={(e) => setCustomTopic(e.target.value)} />
+
+          {activeSubject.id === "self" && (
+            <input
+              type="text"
+              className="subjective-input custom-topic-field"
+              placeholder="Topic"
+              value={customTopic}
+              onChange={(e) => setCustomTopic(e.target.value)}
+            />
           )}
         </div>
+
         <div className="difficulty-grid">
-          {['Easy', 'Medium', 'Hard'].map((level) => {
-            const scoreKey = activeSubject.id === 'self' ? `self-${customTopic}-${level}` : `${activeSubject.id}-${level}`;
-            return (
-              <button key={level} className={`diff-card ${level.toLowerCase()}`} onClick={() => startAssessment(level)}>
-                <div className="diff-icon"><CheckCircle2 size={32} /></div>
-                <div className="diff-text">
-                  <h3>{level}</h3>
-                  {bestScores[scoreKey] !== undefined && <div className="high-score-badge">Best: {bestScores[scoreKey]}/10</div>}
-                </div>
-              </button>
-            );
-          })}
+          {["Easy", "Medium", "Hard"].map((level) => (
+            <button
+              key={level}
+              className={`diff-card ${level.toLowerCase()}`}
+              onClick={() => startAssessment(level)}
+            >
+              {loadingAI ? "Generating AI..." : level}
+            </button>
+          ))}
         </div>
       </div>
     );
   }
 
+  /*
+  ============================
+  SUBJECT LIST
+  ============================
+  */
+
   return (
     <div className="assessments-container animated-fade">
-      <div className="list-header"><h1>Assessments</h1></div>
       <div className="subjects-grid">
         {subjects.map((sub) => (
-          <div key={sub.id} className={`subject-card glass-card ${sub.color}`} onClick={() => setActiveSubject(sub)}>
-            <div className="subject-info"><div className="subject-icon">{sub.icon}</div><h3>{sub.title}</h3></div>
+          <div
+            key={sub.id}
+            className={`subject-card glass-card ${sub.color}`}
+            onClick={() => setActiveSubject(sub)}
+          >
+            <div className="subject-info">
+              <div className="subject-icon">{sub.icon}</div>
+              <h3>{sub.title}</h3>
+            </div>
             <button className="start-btn">Choose Subject</button>
           </div>
         ))}

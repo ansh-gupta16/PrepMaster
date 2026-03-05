@@ -790,3 +790,78 @@
   border-color: #ef4444;
   background: rgba(239, 68, 68, 0.1);
 }
+
+/* changes for feedback after submitting */
+.ai-card{
+  margin-top:20px;
+  padding:18px;
+  border-radius:14px;
+  background:rgba(255,255,255,0.03);
+  text-align:left;
+}
+
+.ai-card h3{
+  margin-bottom:8px;
+  color:#00ffd0;
+}
+
+.ai-chip{
+  display:inline-block;
+  padding:6px 12px;
+  margin:4px;
+  border-radius:20px;
+  background:#ff585833;
+}
+
+.ai-card.highlight{
+  border:1px solid #00ffd0;
+}
+
+.score-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+  margin-top:12px;
+}
+
+.score-box{
+  background:#111827;
+  padding:14px;
+  border-radius:10px;
+  text-align:center;
+  border:1px solid rgba(255,255,255,0.08);
+}
+
+.score-box span{
+  font-size:12px;
+  opacity:0.7;
+}
+
+.score-box h2{
+  margin-top:4px;
+  color:#4ade80;
+}
+
+.ai-summary{
+  margin-top:12px;
+  line-height:1.6;
+  opacity:0.9;
+}
+
+.ai-card ul {
+  padding-left: 18px;
+  margin-top: 10px;
+}
+
+.ai-card li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+  color: #d6d6d6;
+}
+
+.small-submit {
+  width: auto;
+  padding: 8px 18px;
+  font-size: 14px;
+  border-radius: 8px;
+}
