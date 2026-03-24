@@ -27,6 +27,7 @@
   align-items: center;
   gap: 12px;
   margin-bottom: 3rem;
+  overflow: hidden; /* Prevent logo overflow */
 }
 
 .sidebar-top h1 {
@@ -69,13 +70,27 @@
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
-/* User Profile */
-.user-profile {
+/* Authenticated Sidebar Footer */
+.sidebar-footer-authenticated {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border-color);
+}
+
+.user-profile-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.user-profile-block:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .avatar {
@@ -88,6 +103,11 @@
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  flex-shrink: 0;
+}
+
+.user-details {
+  overflow: hidden;
 }
 
 .user-details .name {
@@ -95,11 +115,38 @@
   font-weight: 600;
   font-size: 0.9rem;
   color: var(--text-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-details .role {
+  display: block;
   font-size: 0.8rem;
   color: var(--text-gray);
+}
+
+.logout-action-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(248, 113, 113, 0.05);
+  border: 1px solid rgba(248, 113, 113, 0.1);
+  color: #F87171;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-action-btn:hover {
+  background: rgba(248, 113, 113, 0.15);
+  border-color: rgba(248, 113, 113, 0.3);
+  box-shadow: 0 4px 12px rgba(248, 113, 113, 0.1);
 }
 
 .main-content {
@@ -143,6 +190,7 @@
     gap: 8px;
     font-weight: bold;
     color: var(--accent-blue);
+    overflow: hidden; /* Prevent logo overflow */
   }
 
   .menu-toggle {
@@ -169,18 +217,36 @@
     z-index: 45;
   }
 }
+
 .btn-sidebar-login {
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  border: none;
   background: var(--primary);
   color: #0b1120;
-  border: none;
   padding: 12px;
   border-radius: 12px;
   font-weight: 700;
   cursor: pointer;
   margin-top: auto;
+}
+
+/* --- BRAND LOGO --- */
+.brand-logo-img {
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+}
+
+.brand-logo:hover .brand-logo-img,
+.sidebar-top:hover .brand-logo-img {
+    transform: scale(1.1) rotate(-5deg);
+}
+
+@media (max-width: 768px) {
+    .mobile-header .brand-logo-img {
+        width: 32px;
+        height: 32px;
+    }
 }

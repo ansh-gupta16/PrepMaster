@@ -5,12 +5,12 @@ import { useToast } from '../../context/ToastContext';
 import './Layout.css';
 import { 
   LayoutDashboard, BrainCircuit, Terminal, Bot, Menu, X, 
-  GraduationCap, User, LogIn 
+  GraduationCap, User, LogIn, LogOut 
 } from 'lucide-react';
 
 const Layout = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -28,7 +28,7 @@ const Layout = () => {
       {/* Mobile Header */}
       <nav className="mobile-header">
         <div className="brand-logo">
-          <GraduationCap size={28} />
+          <img src="/LOGO.png" alt="PrepMaster Logo" className="brand-logo-img" />
           <span>PrepMaster</span>
         </div>
         <button className="menu-toggle" onClick={() => setSidebarOpen(!isSidebarOpen)}>
@@ -39,7 +39,7 @@ const Layout = () => {
       {/* Sidebar */}
       <aside className={`sidebar ${isSidebarOpen ? 'active' : ''}`}>
         <div className="sidebar-top">
-          <GraduationCap size={32} />
+          <img src="/LOGO.png" alt="PrepMaster Logo" className="brand-logo-img" />
           <h1>PrepMaster</h1>
         </div>
 
@@ -87,12 +87,31 @@ const Layout = () => {
         {/* Sidebar Footer */}
         <div className="sidebar-footer">
           {isAuthenticated ? (
-            <div className="user-profile">
-              <div className="avatar">{user?.name?.charAt(0) || 'U'}</div>
-              <div className="user-details">
-                <span className="name">{user?.name || 'User'}</span>
-                <span className="role">{user?.role || 'Student'}</span>
-              </div>
+            <div className="sidebar-footer-authenticated">
+              {!user ? (
+                <div className="user-profile-loading">
+                  <div className="avatar-loading spin-slow"></div>
+                  <div className="details-loading">
+                    <div className="skeleton-line name"></div>
+                    <div className="skeleton-line role"></div>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  className="user-profile-block" 
+                  onClick={() => navigate('/profile')}
+                  title="View Profile"
+                >
+                  <div className="avatar-wrapper">
+                    <div className="avatar">{user?.name?.charAt(0) || 'U'}</div>
+                    <div className="status-dot online"></div>
+                  </div>
+                  <div className="user-details">
+                    <span className="name">{user?.name || 'User'}</span>
+                    <span className="role">{user?.role || 'Student'}</span>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <button className="btn-sidebar-login" onClick={() => navigate('/auth')}>

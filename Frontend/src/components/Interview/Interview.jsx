@@ -217,9 +217,9 @@ const Interview = () => {
     toast.success("Transcript Downloaded.");
   };
 
-  // --- Render ---
   return (
     <div className="interview-container animated-fade">
+      <div className="interview-glow"></div>
       <div className="interview-layout">
         
         {/* LEFT PANEL: VIDEO */}

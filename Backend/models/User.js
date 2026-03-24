@@ -39,8 +39,36 @@ const userSchema = new mongoose.Schema(
       default: 0
     },
     lastActive: {
-        type: Date
+      type: Date,
+      default: Date.now
     },
+    problemsSolved: {
+      type: Number,
+      default: 0
+    },
+    totalSubmissions: {
+      type: Number,
+      default: 0
+    },
+    accuracy: {
+      type: Number,
+      default: 0
+    },
+    recentActivity: [
+      {
+        problemId: mongoose.Schema.Types.ObjectId,
+        problemTitle: String,
+        status: String, // 'Accepted', 'Failed', 'Error'
+        language: String,
+        timestamp: { type: Date, default: Date.now }
+      }
+    ],
+    attemptedQuestions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Question"
+      }
+    ],
   },
   { timestamps: true }
 );

@@ -4,14 +4,21 @@ const router = express.Router();
 const {
   generateAssessment,
   submitAssessment,
-  submitSingleQuestion
+  submitSingleQuestion,
+  getSkillStats,
+  getAssessmentHistory
 } = require("../controllers/assessmentController");
+const authMiddleware = require("../middleware/authMiddleware");
 
-// AI GENERATE
-router.post("/generate", generateAssessment);
+// AI GENERATE (Protected)
+router.post("/generate", authMiddleware, generateAssessment);
 
-// SUBMIT FULL ASSESSMENT
-router.post("/submit", submitAssessment);
+// SUBMIT FULL ASSESSMENT (Protected)
+router.post("/submit", authMiddleware, submitAssessment);
+
+// GET SKILL STATS (Protected)
+router.get("/stats", authMiddleware, getSkillStats);
+router.get("/history", authMiddleware, getAssessmentHistory);
 
 // REVIEW SINGLE QUESTION
 router.post("/review-question", submitSingleQuestion);

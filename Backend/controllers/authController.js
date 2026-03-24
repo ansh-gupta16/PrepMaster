@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const CompletedCode = require("../models/CompletedCode");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -83,7 +84,23 @@ exports.login = async (req, res) => {
 // GET CURRENT USER
 exports.getMe = async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.json(null);
+    }
+
     const user = await User.findById(req.user.id).select("-password");
+    // ... rest same
+
+    if (user) {
+      const completions = await CompletedCode.find({ userId: req.user.id }, "questionId");
+      const completedQuestions = completions.map(c => c.questionId);
+      
+      const userData = {
+        ...user._doc,
+        completedQuestions
+      };
+      return res.json(userData);
+    }
 
     res.json(user);
   } catch (error) {

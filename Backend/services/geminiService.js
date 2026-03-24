@@ -126,59 +126,37 @@ Return STRICT JSON:
 ================================================== */
 
 const generateQuestionWiseReview = async (questions, answers) => {
+  // Deprecated in favor of batch version if performance is an issue
+  // Keeping for single question review context if needed
+};
 
-  const reviews = [];
+/* ==================================================
+   BATCH EXPLANATION GENERATOR
+================================================== */
 
-  for (let i = 0; i < questions.length; i++) {
+const generateBatchExplanations = async (questions, answers) => {
+  const prompt = `
+Analyze providing educational explanations for the following results.
+For each: explain why the correct answer is correct and briefly why the user was wrong (if they were).
 
-    const q = questions[i];
-    const userAnswer = answers[i];
-
-    // ---------- MCQ ----------
-    if (q.type === "mcq") {
-
-      const isCorrect = userAnswer === q.correctAnswer;
-
-      if (isCorrect) {
-        reviews[i] = {
-          status: "correct"
-        };
-      } else {
-        reviews[i] = {
-          status: "wrong",
-          userAnswer: userAnswer || "No Answer",
-          correctAnswer: q.correctAnswer,
-          explanation: `Correct answer is "${q.correctAnswer}".`
-        };
-      }
-
-    } 
-    // ---------- SUBJECTIVE ----------
-    else {
-
-      const prompt = `
-Evaluate the answer.
-
-Question: ${q.text}
-CorrectAnswer: ${q.correctAnswer}
-UserAnswer: ${userAnswer}
+Questions Data:
+${questions.map((q, i) => `
+Q${i+1}: ${q.text}
+Correct: ${q.correctAnswer}
+User: ${answers[i] || "Skipped"}
+`).join("\n")}
 
 Return STRICT JSON:
 {
- "status":"correct | wrong",
- "explanation":"short explanation",
- "correctAnswer":"improved correct answer"
+ "explanations": [
+   { "index": 0, "text": "Detailed explanation..." },
+   ...
+ ]
 }
 `;
 
-      const aiText = await callGemini(prompt);
-      const aiData = extractJSON(aiText);
-
-      reviews[i] = aiData;
-    }
-  }
-
-  return { reviews };
+  const aiText = await callGemini(prompt);
+  return extractJSON(aiText);
 };
 
 
@@ -217,5 +195,6 @@ Return STRICT JSON:
 module.exports = {
   generateQuestionsAI,
   generateQuestionWiseReview,
-  generateTutorFeedback
+  generateTutorFeedback,
+  generateBatchExplanations
 };

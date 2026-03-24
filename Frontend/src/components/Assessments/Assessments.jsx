@@ -7,6 +7,7 @@ import {
   ArrowRight,
   PenTool,
   Timer,
+  Lightbulb,
 } from "lucide-react";
 import "./Assessments.css";
 import axios from "axios";
@@ -22,11 +23,11 @@ const Assessments = () => {
   const [customTopic, setCustomTopic] = useState("");
   const [userAnswers, setUserAnswers] = useState([]);
   const [questionFeedback, setQuestionFeedback] = useState([]);
-  const [loadingReview, setLoadingReview] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [loadingAI, setLoadingAI] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [backendResult, setBackendResult] = useState(null);
+  const [expandedCategory, setExpandedCategory] = useState(null);
 
   const timerRef = useRef(null);
 
@@ -127,32 +128,6 @@ const Assessments = () => {
   ============================
   */
 
-  const submitCurrentQuestion = async () => {
-    try {
-
-      const q = assessmentData[currentStep];
-      const ans = userAnswers[currentStep];
-
-      if (!ans) return;
-
-      setLoadingReview(true);
-
-      const res = await axios.post(
-        "/api/assessments/review-question",
-        { question: q, answer: ans }
-      );
-
-      const updated = [...questionFeedback];
-      updated[currentStep] = res.data.review;
-      setQuestionFeedback(updated);
-
-      setLoadingReview(false);
-
-    } catch (err) {
-      console.log(err);
-      setLoadingReview(false);
-    }
-  };
 
   const handleNext = () => {
     if (currentStep < assessmentData.length - 1)
@@ -191,6 +166,7 @@ const Assessments = () => {
 
       setBackendResult(res.data);
       setShowResults(true);
+      setExpandedCategory(null);
 
     } catch (err) {
       console.log(err);
@@ -204,68 +180,113 @@ const Assessments = () => {
   */
 
   if (showResults && backendResult) {
-
-  return (
-    <div className="assessment-active slide-in-right">
-      <div className="assessment-window glass-card results-container">
-
-        <h1>🎉 Assessment Completed</h1>
-
-        <p className="final-score-text">
-          Score: <span>{backendResult.percentage}%</span>
-        </p>
-
-        <div className="ai-card">
-          <h3>📊 Performance Summary</h3>
-          <p>✅ Correct: {backendResult.correct}</p>
-          <p>❌ Incorrect: {backendResult.incorrect}</p>
-          <p>⏭ Skipped: {backendResult.skipped}</p>
-        </div>
-
-        {backendResult.detailedReview.length > 0 && (
-          <div className="ai-card">
-            <h3>📘 Detailed Review</h3>
-
-            {backendResult.detailedReview.map((item, index) => (
-              <div key={index} className="review-item">
-
-                <p><strong>Question:</strong> {item.question}</p>
-
-                <p style={{ color: "#ff6b6b" }}>
-                  <strong>Your Answer:</strong> {item.userAnswer}
-                </p>
-
-                <p style={{ color: "lightgreen" }}>
-                  <strong>Correct Answer:</strong> {item.correctAnswer}
-                </p>
-
-                <p>
-                  <strong>Why Correct:</strong> {item.explanation}
-                </p>
-
-                <hr style={{ margin: "15px 0" }} />
-
+    return (
+      <div className="assessment-active results-dashboard animated-fade">
+        <div className="assessment-window glass-card results-container">
+          <div className="results-header slide-in-bottom">
+            <div className="confetti-icon">🎉</div>
+            <h1>Assessment Completed</h1>
+            <div className="score-main">
+              <div className="score-circle">
+                <span className="score-number">{backendResult.percentage}%</span>
+                <span className="score-label">Overall Score</span>
               </div>
-            ))}
+            </div>
+          </div>          <div className="results-grid slide-in-bottom" style={{ animationDelay: "0.1s" }}>
+            <div className="summary-dashboard">
+              <h3>📊 Performance Review</h3>
+              <p className="summary-lead">Click a category below to review your answers and learn from the AI explanations.</p>
+              
+              <div className="dropdown-container">
+                {['correct', 'incorrect', 'skipped'].map((cat) => {
+                  const label = cat.charAt(0).toUpperCase() + cat.slice(1);
+                  const count = backendResult[cat] || 0;
+                  const isExpanded = expandedCategory === cat;
+                  
+                  // Filter items for this category
+                  const items = backendResult.detailedReview.filter(item => item.status === cat);
 
+                  if (count === 0 && items.length === 0) return null;
+
+                  return (
+                    <div key={cat} className={`dropdown-section ${cat} ${isExpanded ? 'expanded' : ''}`}>
+                      <button 
+                        className="dropdown-trigger" 
+                        onClick={() => setExpandedCategory(isExpanded ? null : cat)}
+                      >
+                        <div className="trigger-left">
+                          <span className="status-dot"></span>
+                          <span className="category-label">{label}</span>
+                        </div>
+                        <div className="trigger-right">
+                          <span className="category-count">{count} Questions</span>
+                          <ArrowRight className="chevron-icon" size={18} />
+                        </div>
+                      </button>
+
+                      <div className="dropdown-content">
+                        <div className="review-scroll-wrapper">
+                          <div className="scroll-gradient top"></div>
+                          <div className="review-scroll-area">
+                            <div className="review-list">
+                              {items.map((item) => (
+                                <div key={item.questionNumber} className="review-card-modern">
+                                  <div className="q-header">
+                                    <span className="q-badge">Question {item.questionNumber}</span>
+                                    <p className="q-text-bold">{item.question}</p>
+                                  </div>
+
+                                  <div className="q-comparison">
+                                    <div className="ans-box user">
+                                      <label>Your Answer</label>
+                                      <div className="ans-val">{item.userAnswer === "Not Attempted" ? "Skipped" : item.userAnswer}</div>
+                                    </div>
+                                    <div className="ans-box correct">
+                                      <label>Correct Answer</label>
+                                      <div className="ans-val">{item.correctAnswer}</div>
+                                    </div>
+                                  </div>
+
+                                  {item.explanation && (
+                                    <div className="explanation-box-elite">
+                                      <div className="exp-heading">
+                                        <Lightbulb size={14} />
+                                        <span>AI Explanation</span>
+                                      </div>
+                                      <p>{item.explanation}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="scroll-gradient bottom"></div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        )}
+        
 
-        <button
-          className="btn-submit"
-          onClick={() => {
-            setShowResults(false);
-            setDifficulty(null);
-            setActiveSubject(null);
-          }}
-        >
-          Back to Assessments
-        </button>
-
+          <div className="results-footer">
+            <button
+              className="btn-submit-premium"
+              onClick={() => {
+                setShowResults(false);
+                setDifficulty(null);
+                setActiveSubject(null);
+              }}
+            >
+              Back to Assessments
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   /*
   ============================
@@ -332,63 +353,26 @@ const Assessments = () => {
             />
           )}
 
-          {!questionFeedback[currentStep] && (
-            <button
-              className="btn-submit small-submit"
-              onClick={submitCurrentQuestion}
-            >
-              {loadingReview ? "AI Reviewing..." : "Submit & Get Feedback"}
-            </button>
-          )}
-
-          {questionFeedback[currentStep] && (
-  <div className="ai-review-card">
-
-    {questionFeedback[currentStep].status === "correct" ? (
-      <p style={{ color: "lightgreen", fontWeight: "bold" }}>
-        ✅ Correct Answer
-      </p>
-    ) : (
-      <>
-        <p style={{ color: "#ff6b6b", fontWeight: "bold" }}>
-          ❌ Your Answer: {questionFeedback[currentStep].userAnswer}
-        </p>
-
-        <p style={{ color: "lightgreen", fontWeight: "bold" }}>
-          ✅ Correct Answer: {questionFeedback[currentStep].correctAnswer}
-        </p>
-
-        <p style={{ marginTop: "8px" }}>
-          💡 {questionFeedback[currentStep].explanation}
-        </p>
-      </>
-    )}
-
-  </div>
-)}
           <footer className="question-footer">
-
-            <button className="btn-secondary" onClick={handleSkip}>
+            <button className="btn-secondary-modern" onClick={handleSkip}>
               Skip
             </button>
 
             {currentStep < assessmentData.length - 1 ? (
               <button
-                className="btn-submit"
-                disabled={!questionFeedback[currentStep]}
+                className="btn-submit-modern"
                 onClick={handleNext}
               >
                 Next <ArrowRight size={18} />
               </button>
             ) : (
               <button
-                className="btn-submit finish"
+                className="btn-submit-modern finish"
                 onClick={finishAssessment}
               >
-                Finish
+                Finish Assessment
               </button>
             )}
-
           </footer>
 
         </div>
@@ -430,10 +414,20 @@ const Assessments = () => {
               className={`diff-card ${level.toLowerCase()}`}
               onClick={() => startAssessment(level)}
             >
-              {loadingAI ? "Generating AI..." : level}
+              {level}
             </button>
           ))}
         </div>
+
+        {/* --- LOADING OVERLAY --- */}
+        {loadingAI && (
+          <div className="loading-overlay animated-fade">
+            <div className="loader-popup slide-in-bottom">
+              <div className="loader-spinner"></div>
+              <p>Questions are getting ready, please wait.</p>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -453,11 +447,18 @@ const Assessments = () => {
             className={`subject-card glass-card ${sub.color}`}
             onClick={() => setActiveSubject(sub)}
           >
-            <div className="subject-info">
+            <div className="subject-icon-wrapper">
               <div className="subject-icon">{sub.icon}</div>
-              <h3>{sub.title}</h3>
+              <div className="subject-glow"></div>
             </div>
-            <button className="start-btn">Choose Subject</button>
+            <div className="subject-content">
+              <h3>{sub.title}</h3>
+              <p>Master your skills in {sub.title} with AI-generated challenges.</p>
+            </div>
+            <button className="start-btn-premium">
+              <span>Choose Subject</span>
+              <ArrowRight size={16} />
+            </button>
           </div>
         ))}
       </div>

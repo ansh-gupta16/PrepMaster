@@ -1,46 +1,41 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  /* --- 1. THE NEW GLASSMORPHISM BASE COLORS --- */
-  --background: hsl(220, 15%, 8%);
-  --foreground: hsl(210, 15%, 90%);
-  --card: hsl(220, 14%, 12%);
-  --primary-theme: hsl(175, 65%, 45%);
-
-  /* --- 2. YOUR EXISTING VARIABLES (Mapped to new colors so nothing breaks!) --- */
-  --bg-dark: var(--background); 
-  --card-dark: var(--card); 
+  /* --- 1. NEW BASE COLORS (Gold Command & Glass Elite) --- */
+  --bg-dark: #0F0F0F;
+  --panel-dark: #1A1A1A;
   
   /* Accents */
-  --primary: var(--primary-theme); 
-  --accent-blue: hsl(190, 55%, 42%); 
-  --accent-purple: #a855f7; /* Retained your original purple */
+  --primary: #C6A96B; /* Premium Gold */
+  --primary-hover: #D4B97A; 
+  --accent-purple: #C6A96B; /* Mapped to gold to keep it strictly unified if used elsewhere */
   
   /* Text */
-  --text-white: var(--foreground);
-  --text-gray: hsl(215, 10%, 50%); 
+  --text-white: #FFFFFF;
+  --text-gray: #A1A1A1; 
   
   /* Dimensions & Borders */
   --sidebar-width: 260px;
-  --border-radius: 16px;
-  --border-color: hsla(210, 15%, 90%, 0.07);
+  --border-radius: 12px;
+  --border-color: #2A2A2A;
 
-  /* --- 3. NEW GLASSMORPHISM TOKENS & GRADIENTS --- */
-  --glass-bg: hsla(220, 14%, 12%, 0.5);
-  --glass-border: hsla(210, 15%, 90%, 0.07);
-  --glass-blur: 20px;
-  --glass-shadow: 0 8px 32px hsla(220, 20%, 3%, 0.5);
+  /* --- 2. GLASSMORPHISM TOKENS (Glass Elite) --- */
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-bg-hover: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.08); /* slight highlight for depth */
+  --glass-blur: 16px;
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 
-  --gradient-primary: linear-gradient(135deg, hsl(175, 65%, 45%), hsl(190, 55%, 42%));
-  --gradient-card: linear-gradient(135deg, hsla(220, 14%, 14%, 0.65), hsla(220, 12%, 9%, 0.4));
-  --gradient-accent: linear-gradient(135deg, hsl(175, 65%, 45%), hsl(175, 60%, 58%));
+  /* Gradients */
+  --gradient-gold: linear-gradient(135deg, #C6A96B, #9E8552);
+  --gradient-panel: linear-gradient(135deg, rgba(26,26,26, 0.8), rgba(15,15,15, 0.9));
 
   /* Fonts */
-  --font-heading: 'Space Grotesk', sans-serif;
+  --font-heading: 'Inter', sans-serif;
   --font-body: 'Inter', sans-serif;
 }
 
-/* --- 4. BASE RESETS --- */
+/* --- 3. BASE RESETS --- */
 * { 
   box-sizing: border-box; 
   margin: 0; 
@@ -52,10 +47,13 @@ body {
   color: var(--text-white); 
   min-height: 100vh; 
   font-family: var(--font-body);
+  letter-spacing: -0.01em; /* Modern typography tightening */
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.03em;
 }
 
 a { 
@@ -63,65 +61,96 @@ a {
   color: inherit; 
 }
 
-/* --- 5. CUSTOM SCROLLBAR (Blended with new theme) --- */
+/* --- 4. CUSTOM SCROLLBAR --- */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-dark); }
-::-webkit-scrollbar-thumb { background: hsl(220, 12%, 18%); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: hsl(220, 12%, 25%); }
+::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3A3A3A; }
 
-/* --- 6. NEW UTILITY CLASSES (Animations & Glass Cards) --- */
+/* --- 5. NEW UTILITY CLASSES --- */
 
+/* Base Glass Elements */
 .glass {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--border-color);
   box-shadow: var(--glass-shadow);
 }
 
-/* This will upgrade all your existing .glass-card elements */
+/* Glass Card */
 .glass-card {
-  background: var(--gradient-card);
+  background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--border-color);
   box-shadow: var(--glass-shadow);
   border-radius: var(--border-radius);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .glass-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px hsla(230, 40%, 5%, 0.6);
-  border-color: hsla(325, 85%, 55%, 0.3);
+  background: var(--glass-bg-hover);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  border-color: rgba(198, 169, 107, 0.3); /* Subtle gold lift */
 }
 
+/* Text Utilities */
 .gradient-text {
-  background: var(--gradient-primary);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+.text-secondary {
+  color: var(--text-gray);
+}
+
+/* UI Elements */
+.btn-primary {
+  background: var(--primary);
+  color: #0F0F0F;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  box-shadow: 0 0 16px rgba(198, 169, 107, 0.4);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-white);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-ghost:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
 /* Animations */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px hsla(175, 65%, 45%, 0.25); }
-  50% { box-shadow: 0 0 30px hsla(175, 65%, 45%, 0.5); }
+  0%, 100% { box-shadow: 0 0 20px rgba(198, 169, 107, 0.15); }
+  50% { box-shadow: 0 0 30px rgba(198, 169, 107, 0.3); }
 }
-.pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+.pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-6px); }
 }
-.animate-float { animation: float 3s ease-in-out infinite; }
-
-@keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-.shimmer {
-  background: linear-gradient(90deg, transparent 0%, hsla(210, 15%, 90%, 0.06) 50%, transparent 100%);
-  background-size: 200% 100%;
-  animation: shimmer 3s ease-in-out infinite;
-}
+.animate-float { animation: float 4s ease-in-out infinite; }

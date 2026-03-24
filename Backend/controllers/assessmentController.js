@@ -10,6 +10,7 @@ const {
   getNextDifficulty,
   generateRecommendations
 } = require("../services/skillEngine");
+const AssessmentResult = require("../models/AssessmentResult");
 
 /*
 ===================================================
@@ -102,7 +103,8 @@ exports.submitSingleQuestion = async (req, res) => {
 
 exports.submitAssessment = async (req, res) => {
   try {
-    const { questions, answers } = req.body;
+    const { questions, answers, topic, difficulty } = req.body;
+    const userId = req.user.id;
 
     let correct = 0;
     let incorrect = 0;
@@ -111,56 +113,52 @@ exports.submitAssessment = async (req, res) => {
     const detailedReview = [];
 
     questions.forEach((q, i) => {
-
       const userAnswer = answers[i];
+      let status = "correct";
 
-      // Skipped
       if (!userAnswer) {
         skipped++;
-        detailedReview.push({
-          question: q.text,
-          userAnswer: "Not Attempted",
-          correctAnswer: q.correctAnswer,
-          explanation: `Correct answer is "${q.correctAnswer}".`
-        });
-        return;
-      }
-
-      // MCQ
-      if (q.type === "mcq") {
-
-        if (userAnswer === q.correctAnswer) {
-          correct++;
-        } else {
+        status = "skipped";
+      } else if (q.type === "mcq") {
+        if (userAnswer !== q.correctAnswer) {
           incorrect++;
-          detailedReview.push({
-            question: q.text,
-            userAnswer,
-            correctAnswer: q.correctAnswer,
-            explanation: `Correct answer is "${q.correctAnswer}".`
-          });
+          status = "incorrect";
+        } else {
+          correct++;
+        }
+      } else {
+        // Subjective: simple length check for now
+        if (userAnswer.length <= 15) {
+          incorrect++;
+          status = "incorrect";
+        } else {
+          correct++;
         }
       }
 
-      // SUBJECTIVE
-      else {
-
-        if (userAnswer.length > 15) {
-          correct++;
-        } else {
-          incorrect++;
-          detailedReview.push({
-            question: q.text,
-            userAnswer,
-            correctAnswer: q.correctAnswer,
-            explanation: "Answer lacks depth. Review the concept."
-          });
-        }
-      }
-
+      detailedReview.push({
+        questionNumber: i + 1,
+        question: q.text,
+        userAnswer: userAnswer || "Not Attempted",
+        correctAnswer: q.correctAnswer,
+        explanation: "", // Will be filled by AI
+        status
+      });
     });
 
     const percentage = Math.round((correct / questions.length) * 100);
+
+    // FETCH AI EXPLANATIONS IN BATCH
+    console.log("🧠 Generating Batch Explanations...");
+    try {
+      const { explanations } = await generateBatchExplanations(questions, answers);
+      detailedReview.forEach((item, i) => {
+        const aiExp = explanations.find(e => e.index === i);
+        if (aiExp) item.explanation = aiExp.text;
+      });
+    } catch (aiErr) {
+      console.error("AI Explanation Error:", aiErr.message);
+    }
 
     res.status(200).json({
       percentage,
@@ -170,8 +168,106 @@ exports.submitAssessment = async (req, res) => {
       detailedReview
     });
 
+    // 🔥 PERSIST RESULT FOR DASHBOARD
+    await AssessmentResult.create({
+      userId,
+      topic: topic || "General",
+      totalQuestions: questions.length,
+      correctAnswers: correct,
+      difficulty: difficulty || "Medium",
+      detailedReview // Save the full list of questions and answers
+    });
+
   } catch (err) {
+    console.error("Submission Failed:", err.message);
     res.status(500).json({ message: "Submission Failed" });
+  }
+};
+
+/*
+===================================================
+📊 GET SKILL STATS (FOR DASHBOARD)
+===================================================
+*/
+
+exports.getSkillStats = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const results = await AssessmentResult.find({ userId });
+
+    const totalTopicsInSystem = 4; // DSA, DBMS, OS, Self Assessment
+
+    if (!results || results.length === 0) {
+      return res.status(200).json({
+        accuracy: 0,
+        topicsCovered: `0 / ${totalTopicsInSystem}`,
+        weakAreas: "No data yet",
+        totalAssessments: 0
+      });
+    }
+
+    let totalCorrect = 0;
+    let totalQuestions = 0;
+    const topicStats = {};
+
+    results.forEach(r => {
+      totalCorrect += r.correctAnswers;
+      totalQuestions += r.totalQuestions;
+
+      if (!topicStats[r.topic]) {
+        topicStats[r.topic] = { correct: 0, total: 0 };
+      }
+      topicStats[r.topic].correct += r.correctAnswers;
+      topicStats[r.topic].total += r.totalQuestions;
+    });
+
+    const accuracy = Math.round((totalCorrect / totalQuestions) * 100);
+    const uniqueTopicsCount = Object.keys(topicStats).length;
+    
+    // Identify Weak Areas (< 60% accuracy)
+    const weakAreas = Object.keys(topicStats)
+      .filter(topic => {
+        const stats = topicStats[topic];
+        const acc = (stats.correct / stats.total) * 100;
+        return acc < 60;
+      })
+      .slice(0, 3)
+      .join(", ");
+
+    res.status(200).json({
+      accuracy,
+      topicsCovered: `${uniqueTopicsCount} / ${totalTopicsInSystem}`,
+      weakAreas: weakAreas || "None (Excellent!)",
+      totalAssessments: results.length
+    });
+
+  } catch (error) {
+    console.error("Stats Error:", error.message);
+    res.status(500).json({ message: "Failed to fetch stats" });
+  }
+};
+
+/*
+===================================================
+📜 GET ASSESSMENT HISTORY (FOR PROFILE)
+===================================================
+*/
+
+exports.getAssessmentHistory = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    // Get the most recent 3 assessments with full details
+    const history = await AssessmentResult.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(3);
+
+    res.status(200).json({
+      success: true,
+      data: history
+    });
+  } catch (error) {
+    console.error("History Error:", error.message);
+    res.status(500).json({ message: "Failed to fetch assessment history" });
   }
 };
 
