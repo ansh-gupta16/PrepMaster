@@ -336,31 +336,140 @@
   border-top: 1px solid #1E1E1E;
 }
 
-.constraints-box h3 {
-  color: #FFFFFF;
-  font-size: 0.95rem;
-  margin: 0 0 0.75rem 0;
+/* --- STRUCTURED DESCRIPTION --- */
+.problem-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  padding-bottom: 3rem;
 }
 
-.constraints-box ul {
+.section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-white);
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+.description-text {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #E2E8F0;
+  margin-bottom: 1rem;
+}
+
+.explanation-block {
+  margin-top: 1.5rem;
+  padding-left: 1.25rem;
+  border-left: 2px solid var(--primary);
+  color: #A1A1A1;
+}
+
+.format-box {
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.format-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--primary);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+.format-item p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #CBD5E1;
+}
+
+.example-box {
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+}
+
+.example-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.constraints-list {
   list-style: none;
   padding: 0;
-  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.constraints-box li {
+.constraints-list li {
   color: #A1A1A1;
   font-size: 0.85rem;
-  padding: 0.3rem 0;
-  padding-left: 1rem;
+  padding: 0.2rem 0 0.2rem 1.5rem;
   position: relative;
+  line-height: 1.5;
 }
 
-.constraints-box li::before {
-  content: '•';
+.constraints-list li::before {
+  content: '→';
   position: absolute;
   left: 0;
-  color: var(--primary, #C6A96B);
+  color: var(--primary);
+  opacity: 0.7;
+}
+
+.hints-details {
+  border: 1px solid #1E1E1E;
+  border-radius: 8px;
+  background: #111111;
+}
+
+.hints-summary {
+  padding: 0.85rem 1.25rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.hint-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-top: 1px solid #1E1E1E;
+}
+
+.hint-num {
+  width: 20px;
+  height: 20px;
+  background: var(--primary);
+  color: #000;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 800;
 }
 
 /* ─── EDITOR TOP BAR ─────────────────────────────── */

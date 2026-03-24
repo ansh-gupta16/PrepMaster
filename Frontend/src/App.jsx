@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider } from './context/AuthContext';
@@ -12,11 +12,24 @@ import Interview from './components/Interview/Interview';
 import Profile from './components/Profile/Profile';
 import Auth from './components/Auth/Auth';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
+import EntryLoader from './components/EntryLoader/EntryLoader';
 
 function App() {
+  const [appLoading, setAppLoading] = useState(true);
+  const [showLoader, setShowLoader] = useState(true);
+
+  const handleLoaderComplete = () => {
+    setAppLoading(false);
+    // Allow time for the loader's exit transition (0.8s)
+    setTimeout(() => {
+      setShowLoader(false);
+    }, 850);
+  };
+
   return (
     <ToastProvider>
       <AuthProvider>
+        {showLoader && <EntryLoader onComplete={handleLoaderComplete} />}
         <BrowserRouter>
           <Routes>
             {/* 1. Public Route for Login */}

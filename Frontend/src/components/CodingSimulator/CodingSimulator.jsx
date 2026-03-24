@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Send, RefreshCw, ChevronLeft, Code2, Terminal, CheckCircle, XCircle, Clock, Cpu, Loader2, AlertTriangle, ArrowRight, Zap } from 'lucide-react';
+import { Play, Send, RefreshCw, ChevronLeft, Code2, Terminal, CheckCircle, XCircle, Clock, Cpu, Loader2, AlertTriangle, ArrowRight, Zap, HelpCircle, ChevronDown } from 'lucide-react';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, Decoration, gutter, GutterMarker } from '@codemirror/view';
 import { EditorState, StateField, StateEffect, RangeSet } from '@codemirror/state';
 import { javascript } from '@codemirror/lang-javascript';
@@ -637,22 +637,91 @@ const CodingSimulator = () => {
             </div>
           </div>
           <div className="problem-content">
-            <p className="description-text">{selectedProblem.description}</p>
-
-            {selectedProblem.examples.map((ex, index) => (
-              <div key={index} className="example-box">
-                <strong className="example-label">Example {index + 1}:</strong>
-                <div className="code-block">
-                  <span className="var-name">Input:</span> {ex.input} <br />
-                  <span className="var-name">Output:</span> {ex.output}
+            {/* 1. Overview & Explanation */}
+            <div className="description-section">
+              <p className="description-text">
+                {selectedProblem.structuredDescription?.overview || selectedProblem.description}
+              </p>
+              {selectedProblem.structuredDescription?.explanation && (
+                <div className="explanation-block">
+                  <p>{selectedProblem.structuredDescription.explanation}</p>
                 </div>
-              </div>
-            ))}
-
-            <div className="constraints-box">
-              <h3>Constraints:</h3>
-              <ul>{selectedProblem.constraints?.map((c, i) => <li key={i}>{c}</li>)}</ul>
+              )}
             </div>
+
+            {/* 2. Formats (Input/Output) */}
+            {(selectedProblem.structuredDescription?.inputFormat || selectedProblem.structuredDescription?.outputFormat) && (
+              <div className="format-box glass-card">
+                {selectedProblem.structuredDescription.inputFormat && (
+                  <div className="format-item">
+                    <span className="format-label">Input Format:</span>
+                    <p>{selectedProblem.structuredDescription.inputFormat}</p>
+                  </div>
+                )}
+                {selectedProblem.structuredDescription.outputFormat && (
+                  <div className="format-item">
+                    <span className="format-label">Output Format:</span>
+                    <p>{selectedProblem.structuredDescription.outputFormat}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 3. Examples */}
+            <div className="examples-section">
+              <h3 className="section-title">Examples</h3>
+              {selectedProblem.examples.map((ex, index) => (
+                <div key={index} className="example-box">
+                  <strong className="example-label">Example {index + 1}:</strong>
+                  <div className="code-block">
+                    <div className="code-line"><span className="var-name">Input:</span> <code>{ex.input}</code></div>
+                    <div className="code-line"><span className="var-name">Output:</span> <code>{ex.output}</code></div>
+                  </div>
+                </div>
+              ))}
+              {selectedProblem.structuredDescription?.exampleWalkthrough && (
+                <div className="walkthrough-block">
+                  <span className="walkthrough-label">Walkthrough:</span>
+                  <p>{selectedProblem.structuredDescription.exampleWalkthrough}</p>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Constraints */}
+            {(selectedProblem.constraints?.length > 0 || selectedProblem.structuredDescription?.constraintsExplanation) && (
+              <div className="constraints-section">
+                <h3 className="section-title">Constraints</h3>
+                {selectedProblem.structuredDescription?.constraintsExplanation && (
+                  <p className="constraints-text">{selectedProblem.structuredDescription.constraintsExplanation}</p>
+                )}
+                <ul className="constraints-list">
+                  {selectedProblem.constraints?.map((c, i) => <li key={i}>{c}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {/* 5. Hints (Collapsible) */}
+            {selectedProblem.structuredDescription?.hints?.length > 0 && (
+              <div className="hints-section">
+                <details className="hints-details">
+                  <summary className="hints-summary">
+                    <div className="summary-content">
+                      <HelpCircle size={16} />
+                      <span>Show Hints ({selectedProblem.structuredDescription.hints.length})</span>
+                    </div>
+                    <ChevronDown size={16} className="chevron" />
+                  </summary>
+                  <div className="hints-list">
+                    {selectedProblem.structuredDescription.hints.map((hint, idx) => (
+                      <div key={idx} className="hint-item">
+                        <span className="hint-num">{idx + 1}</span>
+                        <p>{hint}</p>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </div>
+            )}
           </div>
         </div>
 

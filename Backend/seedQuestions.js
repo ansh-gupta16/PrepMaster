@@ -1,7 +1,8 @@
-require('dotenv').config();
-const mongoose = require('mongoose');
 const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+const mongoose = require('mongoose');
 const Question = require('./models/Question');
+const { enhanceDescription } = require('./utils/descriptionEnhancer');
 
 // MongoDB Connection from .env
 const MONGO_URI = process.env.MONGO_URI;
@@ -679,6 +680,7 @@ async function seed() {
     console.log("Connected to MongoDB...");
 
     for (const q of questions) {
+      q.structuredDescription = enhanceDescription(q);
       await Question.findOneAndUpdate({ title: q.title }, q, { upsert: true, new: true });
       console.log(`Seeded: ${q.title}`);
     }

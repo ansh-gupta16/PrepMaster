@@ -23,6 +23,15 @@ const questionSchema = new mongoose.Schema({
     python: String,
     java: String,
     cpp: String
+  },
+  structuredDescription: {
+    overview: { type: String, default: "" },
+    explanation: { type: String, default: "" },
+    inputFormat: { type: String, default: "" },
+    outputFormat: { type: String, default: "" },
+    exampleWalkthrough: { type: String, default: "" },
+    constraintsExplanation: { type: String, default: "" },
+    hints: { type: [String], default: [] }
   }
 }, { timestamps: true });
 
