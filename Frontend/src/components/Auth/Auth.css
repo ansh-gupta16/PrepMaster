@@ -1,0 +1,228 @@
+/* =========================================
+   1. CONTAINER & LAYOUT
+   ========================================= */
+.auth-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top right, #1e293b, #0f172a);
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 1100px; /* Restored width for split layout */
+  height: 650px;     /* Fixed height for split layout */
+  background: #1e293b;
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  display: flex;     /* Enable Flexbox */
+  flex-direction: row; /* Side-by-side layout */
+  overflow: hidden;
+}
+
+/* =========================================
+   2. LEFT SIDE (FORM)
+   ========================================= */
+.auth-form-section {
+  flex: 1; /* Take up 50% space */
+  padding: 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: rgba(30, 41, 59, 0.4);
+}
+
+.auth-header {
+  margin-bottom: 2.5rem;
+  text-align: left;
+}
+
+.auth-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: #fff;
+  font-weight: 800;
+  margin-top: 0;
+}
+
+.subtitle {
+  color: #94a3b8;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* =========================================
+   3. RIGHT SIDE (VISUAL)
+   ========================================= */
+.auth-visual-section {
+  flex: 1; /* Take up 50% space */
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.1));
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.visual-content {
+  text-align: center;
+  padding: 3rem;
+  max-width: 450px;
+}
+
+.visual-content h2 {
+  font-size: 2.5rem;
+  color: #fff;
+  margin-bottom: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.visual-content p {
+  color: #cbd5e1;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+/* =========================================
+   4. INPUTS & ICONS
+   ========================================= */
+.input-group {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  transition: color 0.3s;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  transition: color 0.3s;
+  z-index: 10;
+}
+
+.password-toggle:hover {
+  color: #fff;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 16px 45px 16px 50px; 
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.input-group input:focus {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.input-group input:focus + .input-icon {
+  color: #10b981;
+}
+
+/* =========================================
+   5. BUTTONS & FOOTER
+   ========================================= */
+.btn-primary-auth {
+  width: 100%;
+  padding: 16px;
+  background: #10b981;
+  color: #0b1120;
+  border: none;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 1rem;
+  transition: all 0.3s;
+}
+
+.btn-primary-auth:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+  background-color: #0ea674;
+}
+
+.auth-footer {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.auth-footer p {
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #10b981;
+  font-weight: 700;
+  cursor: pointer;
+  margin-left: 8px;
+  padding: 0;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
+.link-btn:hover {
+  color: #34d399;
+}
+
+/* =========================================
+   6. MOBILE RESPONSIVE
+   ========================================= */
+@media (max-width: 900px) {
+  .auth-card {
+    flex-direction: column;
+    height: auto;
+    max-width: 500px;
+  }
+  
+  .auth-visual-section {
+    display: none; /* Hide visual on mobile */
+  }
+  
+  .auth-form-section {
+    padding: 2.5rem;
+  }
+  
+  .auth-header h1 {
+    font-size: 2rem;
+  }
+}
