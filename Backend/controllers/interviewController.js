@@ -1,240 +1,102 @@
-// // const {
-// //   generateInterviewResponse
-// // } = require("../services/geminiService");
-
-// // /*
-// // ===================================================
-// //  🤖 AI INTERVIEW SESSION (LIVE CHAT)
-// // ===================================================
-// // */
-
-// // exports.processInterviewStep = async (req, res) => {
-// //   try {
-// //     const { history, currentMessage, jobRole, difficulty } = req.body;
-
-// //     if (!currentMessage || !jobRole) {
-// //       return res.status(400).json({
-// //         message: "Missing message or job role"
-// //       });
-// //     }
-
-// //     console.log(`⚡ AI Interview Processing: [${jobRole}] - ${difficulty}`);
-
-// //     const aiData = await generateInterviewResponse(
-// //       history || [], 
-// //       currentMessage, 
-// //       jobRole, 
-// //       difficulty || "Intermediate"
-// //     );
-
-// //     if (!aiData || !aiData.nextQuestion) {
-// //       throw new Error("Invalid AI response format");
-// //     }
-
-// //     res.status(200).json(aiData);
-
-// //   } catch (error) {
-// //     console.error("❌ INTERVIEW ERROR:", error.message);
-
-// //     res.status(500).json({
-// //       message: "AI Interview Failed to respond"
-// //     });
-// //   }
-// // };
-
-// // /*
-// // ===================================================
-// //  🔥 START INTERVIEW (INITIAL QUESTION)
-// // ===================================================
-// // */
-
-// // exports.startInterview = async (req, res) => {
-// //   try {
-// //     const { jobRole, difficulty } = req.body;
-
-// //     console.log("🤖 Initializing AI Interview for:", jobRole);
-
-// //     // We send an empty history and a "Hello" to trigger the first question
-// //     const aiData = await generateInterviewResponse(
-// //       [], 
-// //       "Hello, I am ready for the interview.", 
-// //       jobRole, 
-// //       difficulty
-// //     );
-
-// //     res.status(200).json(aiData);
-
-// //   } catch (error) {
-// //     console.error("❌ START ERROR:", error.message);
-// //     res.status(500).json({ message: "Failed to start interview" });
-// //   }
-// // };
-
-// const {
-//   generateInterviewResponse
-// } = require("../services/geminiService");
-
-// /*
-// ===================================================
-//  🤖 AI INTERVIEW SESSION (LIVE CHAT)
-// ===================================================
-// */
-
-// exports.processInterviewStep = async (req, res) => {
-//   try {
-//     const { history, currentMessage, jobRole, difficulty } = req.body;
-
-//     if (!currentMessage || !jobRole) {
-//       return res.status(400).json({
-//         message: "Missing message or job role"
-//       });
-//     }
-
-//     console.log(`⚡ AI Interview Processing: [${jobRole}] - ${difficulty}`);
-
-//     const aiData = await generateInterviewResponse(
-//       history || [], 
-//       currentMessage, 
-//       jobRole, 
-//       difficulty || "Intermediate"
-//     );
-
-//     if (!aiData || !aiData.nextQuestion) {
-//       throw new Error("Invalid AI response format");
-//     }
-
-//     res.status(200).json(aiData);
-
-//   } catch (error) {
-//     console.error("❌ INTERVIEW ERROR:", error.message);
-
-//     // 🔥 NEW: Check for the 429 Rate Limit from geminiService
-//     if (error.status === 429 || error.message?.includes("429")) {
-//         return res.status(429).json({
-//             message: "Gemini API Rate Limit Reached. Concluding session."
-//         });
-//     }
-
-//     res.status(500).json({
-//       message: "AI Interview Failed to respond"
-//     });
-//   }
-// };
-
-// /*
-// ===================================================
-//  🔥 START INTERVIEW (INITIAL QUESTION)
-// ===================================================
-// */
-
-// exports.startInterview = async (req, res) => {
-//   try {
-//     const { jobRole, difficulty } = req.body;
-
-//     console.log("🤖 Initializing AI Interview for:", jobRole);
-
-//     // We send an empty history and a "Hello" to trigger the first question
-//     const aiData = await generateInterviewResponse(
-//       [], 
-//       "Hello, I am ready for the interview.", 
-//       jobRole, 
-//       difficulty
-//     );
-
-//     res.status(200).json(aiData);
-
-//   } catch (error) {
-//     console.error("❌ START ERROR:", error.message);
-
-//     // 🔥 NEW: Handle RPM limit during start
-//     if (error.status === 429 || error.message?.includes("429")) {
-//         return res.status(429).json({ message: "RPM Limit Reached" });
-//     }
-
-//     res.status(500).json({ message: "Failed to start interview" });
-//   }
-// };
-
-
-
 const {
   generateInterviewResponse
 } = require("../services/geminiService");
 
-/*
-===================================================
- 🤖 AI INTERVIEW SESSION (LIVE CHAT)
-===================================================
-*/
+
+/* ==================================================
+   🤖 AI INTERVIEW SESSION (LIVE CHAT)
+================================================== */
 
 exports.processInterviewStep = async (req, res) => {
   try {
-    const { history, currentMessage, jobRole, difficulty } = req.body;
+    const { history, currentMessage, jobRole, difficulty, domain } = req.body;
 
-    if (!currentMessage || !jobRole) {
-      return res.status(400).json({
-        message: "Missing message or job role"
-      });
+    // --- Input validation ---
+    if (!currentMessage || typeof currentMessage !== "string" || !currentMessage.trim()) {
+      return res.status(400).json({ message: "Missing or empty message" });
+    }
+    if (!jobRole || typeof jobRole !== "string" || !jobRole.trim()) {
+      return res.status(400).json({ message: "Missing job role" });
+    }
+    if (!domain || typeof domain !== "string" || !domain.trim()) {
+      return res.status(400).json({ message: "Missing domain / field" });
     }
 
-    console.log(`⚡ AI Interview Processing: [${jobRole}] - ${difficulty}`);
+    const validDifficulties = ["Easy", "Medium", "Hard"];
+    const resolvedDifficulty = validDifficulties.includes(difficulty) ? difficulty : "Medium";
+
+    console.log(`⚡ AI Interview Processing: [${jobRole}] [${domain}] [${resolvedDifficulty}]`);
 
     const aiData = await generateInterviewResponse(
-      history || [], 
-      currentMessage, 
-      jobRole, 
-      difficulty || "Intermediate"
+      history || [],
+      currentMessage.trim(),
+      jobRole.trim(),
+      resolvedDifficulty,
+      domain.trim()
     );
 
     if (!aiData || !aiData.nextQuestion) {
-      throw new Error("Invalid AI response format");
+      throw new Error("Invalid AI response: missing nextQuestion field");
     }
 
-    res.status(200).json(aiData);
+    return res.status(200).json(aiData);
 
   } catch (error) {
-    console.error("❌ INTERVIEW ERROR:", error.message);
+    console.error("❌ INTERVIEW STEP ERROR:", error.message);
 
-    // 🔥 NEW: Send 429 status if rate limit was reached
-    if (error.status === 429 || error.message?.includes("429")) {
-        return res.status(429).json({ message: "RPM Limit Reached" });
+    // Proper check — geminiService now rejects with Error objects that have .status
+    if (error.status === 429) {
+      return res.status(429).json({ message: "RPM limit reached. Please wait a moment." });
     }
 
-    res.status(500).json({
-      message: "AI Interview Failed to respond"
-    });
+    return res.status(500).json({ message: "AI interview failed to respond. Please try again." });
   }
 };
 
-/*
-===================================================
- 🔥 START INTERVIEW (INITIAL QUESTION)
-===================================================
-*/
+
+/* ==================================================
+   🔥 START INTERVIEW (INITIAL QUESTION)
+================================================== */
 
 exports.startInterview = async (req, res) => {
   try {
-    const { jobRole, difficulty } = req.body;
+    const { jobRole, difficulty, domain } = req.body;
 
-    console.log("🤖 Initializing AI Interview for:", jobRole);
-
-    // We send an empty history and a "Hello" to trigger the first question
-    const aiData = await generateInterviewResponse(
-      [], 
-      "Hello, I am ready for the interview.", 
-      jobRole, 
-      difficulty
-    );
-
-    res.status(200).json(aiData);
-
-  } catch (error) {
-    console.error("❌ START ERROR:", error.message);
-    
-    if (error.status === 429 || error.message?.includes("429")) {
-        return res.status(429).json({ message: "RPM Limit Reached" });
+    // --- Input validation (matches processInterviewStep) ---
+    if (!jobRole || typeof jobRole !== "string" || !jobRole.trim()) {
+      return res.status(400).json({ message: "Missing job role" });
+    }
+    if (!domain || typeof domain !== "string" || !domain.trim()) {
+      return res.status(400).json({ message: "Missing domain / field" });
     }
 
-    res.status(500).json({ message: "Failed to start interview" });
+    const validDifficulties = ["Easy", "Medium", "Hard"];
+    const resolvedDifficulty = validDifficulties.includes(difficulty) ? difficulty : "Medium";
+
+    console.log(`🤖 Starting AI Interview: [${jobRole}] [${domain}] [${resolvedDifficulty}]`);
+
+    // Send an empty history and a trigger message to get the opening question
+    const aiData = await generateInterviewResponse(
+      [],
+      "Hello, I am ready to begin the interview.",
+      jobRole.trim(),
+      resolvedDifficulty,
+      domain.trim()
+    );
+
+    if (!aiData || !aiData.nextQuestion) {
+      throw new Error("Invalid AI response: missing nextQuestion field");
+    }
+
+    return res.status(200).json(aiData);
+
+  } catch (error) {
+    console.error("❌ START INTERVIEW ERROR:", error.message);
+
+    if (error.status === 429) {
+      return res.status(429).json({ message: "RPM limit reached. Please wait a moment." });
+    }
+
+    return res.status(500).json({ message: "Failed to start interview. Please try again." });
   }
 };

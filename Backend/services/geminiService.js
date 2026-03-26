@@ -1,591 +1,77 @@
-// // const axios = require("axios");
-
-// // console.log("Loaded Gemini Key:", process.env.GEMINI_API_KEY);
-
-// // const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
-// // const GEMINI_URL =
-// // `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-
-// // /* ==================================================
-// //    GEMINI QUEUE (ANTI RATE LIMIT)
-// // ================================================== */
-
-// // const requestQueue = [];
-// // let isProcessing = false;
-// // const QUEUE_DELAY = 2500;
-
-// // const processQueue = async () => {
-
-// //   if (isProcessing || requestQueue.length === 0) return;
-
-// //   isProcessing = true;
-
-// //   const item = requestQueue.shift();
-// //   const { prompt, resolve, reject } = item;
-
-// //   try {
-
-// //     const response = await axios.post(
-// //       GEMINI_URL,
-// //       {
-// //         contents: [
-// //           { role: "user", parts: [{ text: prompt }] }
-// //         ],
-// //         generationConfig: {
-// //           temperature: 0.6,
-// //           maxOutputTokens: 4096
-// //         }
-// //       },
-// //       { headers: { "Content-Type": "application/json" } }
-// //     );
-
-// //     const text = response?.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-// //     if (!text) throw new Error("Invalid Gemini response");
-
-// //     resolve(text);
-
-// //   } catch (error) {
-// //     reject(error);
-// //   } finally {
-// //     setTimeout(() => {
-// //       isProcessing = false;
-// //       processQueue();
-// //     }, QUEUE_DELAY);
-// //   }
-// // };
-
-// // const callGemini = (prompt) =>
-// //   new Promise((resolve, reject) => {
-// //     requestQueue.push({ prompt, resolve, reject });
-// //     processQueue();
-// //   });
-
-
-// // /* ==================================================
-// //    SAFE JSON PARSER
-// // ================================================== */
-
-// // const extractJSON = (text) => {
-
-// //   const cleaned = text
-// //     .replace(/```json/gi, "")
-// //     .replace(/```/g, "")
-// //     .trim();
-
-// //   const start = cleaned.indexOf("{");
-// //   const end = cleaned.lastIndexOf("}");
-
-// //   if (start === -1 || end === -1)
-// //     throw new Error("No JSON found");
-
-// //   return JSON.parse(cleaned.slice(start, end + 1));
-// // };
-
-
-// // /* ==================================================
-// //    QUESTION GENERATOR
-// // ================================================== */
-
-// // const generateQuestionsAI = async (topic, difficulty) => {
-
-// //   const prompt = `
-// // Generate EXACTLY 10 questions.
-// // Topic: ${topic}
-// // Difficulty: ${difficulty}
-
-// // Return STRICT JSON:
-// // {
-// //  "questions":[
-// //   {
-// //    "type":"mcq",
-// //    "text":"question",
-// //    "options":["A","B","C","D"],
-// //    "correctAnswer":"A",
-// //    "concept":"Topic"
-// //   },
-// //   {
-// //    "type":"subjective",
-// //    "text":"question",
-// //    "correctAnswer":"Expected explanation",
-// //    "concept":"Topic"
-// //   }
-// //  ]
-// // }
-// // `;
-
-// //   const aiText = await callGemini(prompt);
-// //   return extractJSON(aiText);
-// // };
-
-
-// // /* ==================================================
-// //    QUESTION REVIEW ENGINE
-// // ================================================== */
-
-// // const generateQuestionWiseReview = async (questions, answers) => {
-
-// //   const reviews = [];
-
-// //   for (let i = 0; i < questions.length; i++) {
-
-// //     const q = questions[i];
-// //     const userAnswer = answers[i];
-
-// //     // ---------- MCQ ----------
-// //     if (q.type === "mcq") {
-
-// //       const isCorrect = userAnswer === q.correctAnswer;
-
-// //       if (isCorrect) {
-// //         reviews[i] = {
-// //           status: "correct"
-// //         };
-// //       } else {
-// //         reviews[i] = {
-// //           status: "wrong",
-// //           userAnswer: userAnswer || "No Answer",
-// //           correctAnswer: q.correctAnswer,
-// //           explanation: `Correct answer is "${q.correctAnswer}".`
-// //         };
-// //       }
-
-// //     } 
-// //     // ---------- SUBJECTIVE ----------
-// //     else {
-
-// //       const prompt = `
-// // Evaluate the answer.
-
-// // Question: ${q.text}
-// // CorrectAnswer: ${q.correctAnswer}
-// // UserAnswer: ${userAnswer}
-
-// // Return STRICT JSON:
-// // {
-// //  "status":"correct | wrong",
-// //  "explanation":"short explanation",
-// //  "correctAnswer":"improved correct answer"
-// // }
-// // `;
-
-// //       const aiText = await callGemini(prompt);
-// //       const aiData = extractJSON(aiText);
-
-// //       reviews[i] = aiData;
-// //     }
-// //   }
-
-// //   return { reviews };
-// // };
-
-
-// // /* ==================================================
-// //    TUTOR FEEDBACK
-// // ================================================== */
-
-// // const generateTutorFeedback = async (
-// //   topic,
-// //   difficulty,
-// //   score,
-// //   weakAreas
-// // ) => {
-
-// //   const prompt = `
-// // Give short feedback.
-
-// // Return STRICT JSON:
-// // {
-// //  "strengths":"text",
-// //  "weaknesses":"text",
-// //  "improvementPlan":"text",
-// //  "aiAdvice":"text"
-// // }
-// // `;
-
-// //   const aiText = await callGemini(prompt);
-// //   return extractJSON(aiText);
-// // };
-
-
-// // /* ==================================================
-// //    AI INTERVIEW ENGINE
-// // ================================================== */
-
-// // const generateInterviewResponse = async (history, currentMessage, jobRole, difficulty) => {
-// //   const prompt = `
-// //     You are an expert technical interviewer for the role of ${jobRole}.
-// //     Difficulty Level: ${difficulty}.
-    
-// //     Current Conversation History:
-// //     ${history.map(h => `${h.role === 'user' ? 'Candidate' : 'Interviewer'}: ${h.text}`).join("\n")}
-    
-// //     Candidate's Latest Response: "${currentMessage}"
-    
-// //     Task: 
-// //     1. Analyze the candidate's response for technical accuracy.
-// //     2. Provide a very brief feedback/acknowledgment.
-// //     3. Ask the NEXT logical technical or behavioral question to continue the interview.
-    
-// //     Return STRICT JSON:
-// //     {
-// //       "feedback": "Short feedback on previous answer",
-// //       "nextQuestion": "The next interview question",
-// //       "isEnd": false
-// //     }
-// //   `;
-
-// //   const aiText = await callGemini(prompt);
-// //   return extractJSON(aiText);
-// // };
-
-
-// // /* ==================================================
-// //    EXPORTS
-// // ================================================== */
-
-// // module.exports = {
-// //   generateQuestionsAI,
-// //   generateQuestionWiseReview,
-// //   generateTutorFeedback,
-// //   generateInterviewResponse
-// // };
-
-// const axios = require("axios");
-
-// console.log("Loaded Gemini Key:", process.env.GEMINI_API_KEY);
-
-// const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
-// // 🔥 KEEPING YOUR WORKING URL EXACTLY AS IS
-// const GEMINI_URL =
-// `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-
-// /* ==================================================
-//    GEMINI QUEUE (ANTI RATE LIMIT)
-// ================================================== */
-
-// const requestQueue = [];
-// let isProcessing = false;
-// const QUEUE_DELAY = 2500;
-
-// const processQueue = async () => {
-
-//   if (isProcessing || requestQueue.length === 0) return;
-
-//   isProcessing = true;
-
-//   const item = requestQueue.shift();
-//   const { prompt, resolve, reject } = item;
-
-//   try {
-
-//     const response = await axios.post(
-//       GEMINI_URL,
-//       {
-//         contents: [
-//           { role: "user", parts: [{ text: prompt }] }
-//         ],
-//         generationConfig: {
-//           temperature: 0.6,
-//           maxOutputTokens: 4096
-//         }
-//       },
-//       { headers: { "Content-Type": "application/json" } }
-//     );
-
-//     const text = response?.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-//     if (!text) throw new Error("Invalid Gemini response");
-
-//     resolve(text);
-
-//   } catch (error) {
-//     // 🔥 NEW: Identify 429 specifically so the Frontend can trigger the exit
-//     if (error.response && error.response.status === 429) {
-//         reject({ status: 429, message: "RPM Limit Reached" });
-//     } else {
-//         reject(error);
-//     }
-//   } finally {
-//     setTimeout(() => {
-//       isProcessing = false;
-//       processQueue();
-//     }, QUEUE_DELAY);
-//   }
-// };
-
-// const callGemini = (prompt) =>
-//   new Promise((resolve, reject) => {
-//     requestQueue.push({ prompt, resolve, reject });
-//     processQueue();
-//   });
-
-
-// /* ==================================================
-//    SAFE JSON PARSER
-// ================================================== */
-
-// const extractJSON = (text) => {
-
-//   const cleaned = text
-//     .replace(/```json/gi, "")
-//     .replace(/```/g, "")
-//     .trim();
-
-//   const start = cleaned.indexOf("{");
-//   const end = cleaned.lastIndexOf("}");
-
-//   if (start === -1 || end === -1)
-//     throw new Error("No JSON found");
-
-//   return JSON.parse(cleaned.slice(start, end + 1));
-// };
-
-
-// /* ==================================================
-//    QUESTION GENERATOR
-// ================================================== */
-
-// const generateQuestionsAI = async (topic, difficulty) => {
-
-//   const prompt = `
-// Generate EXACTLY 10 questions.
-// Topic: ${topic}
-// Difficulty: ${difficulty}
-
-// Return STRICT JSON:
-// {
-//  "questions":[
-//   {
-//    "type":"mcq",
-//    "text":"question",
-//    "options":["A","B","C","D"],
-//    "correctAnswer":"A",
-//    "concept":"Topic"
-//   },
-//   {
-//    "type":"subjective",
-//    "text":"question",
-//    "correctAnswer":"Expected explanation",
-//    "concept":"Topic"
-//   }
-//  ]
-// }
-// `;
-
-//   const aiText = await callGemini(prompt);
-//   return extractJSON(aiText);
-// };
-
-
-// /* ==================================================
-//    QUESTION REVIEW ENGINE
-// ================================================== */
-
-// const generateQuestionWiseReview = async (questions, answers) => {
-
-//   const reviews = [];
-
-//   for (let i = 0; i < questions.length; i++) {
-
-//     const q = questions[i];
-//     const userAnswer = answers[i];
-
-//     // ---------- MCQ ----------
-//     if (q.type === "mcq") {
-
-//       const isCorrect = userAnswer === q.correctAnswer;
-
-//       if (isCorrect) {
-//         reviews[i] = {
-//           status: "correct"
-//         };
-//       } else {
-//         reviews[i] = {
-//           status: "wrong",
-//           userAnswer: userAnswer || "No Answer",
-//           correctAnswer: q.correctAnswer,
-//           explanation: `Correct answer is "${q.correctAnswer}".`
-//         };
-//       }
-
-//     } 
-//     // ---------- SUBJECTIVE ----------
-//     else {
-
-//       const prompt = `
-// Evaluate the answer.
-
-// Question: ${q.text}
-// CorrectAnswer: ${q.correctAnswer}
-// UserAnswer: ${userAnswer}
-
-// Return STRICT JSON:
-// {
-//  "status":"correct | wrong",
-//  "explanation":"short explanation",
-//  "correctAnswer":"improved correct answer"
-// }
-// `;
-
-//       const aiText = await callGemini(prompt);
-//       const aiData = extractJSON(aiText);
-
-//       reviews[i] = aiData;
-//     }
-//   }
-
-//   return { reviews };
-// };
-
-
-// /* ==================================================
-//    TUTOR FEEDBACK
-// ================================================== */
-
-// const generateTutorFeedback = async (
-//   topic,
-//   difficulty,
-//   score,
-//   weakAreas
-// ) => {
-
-//   const prompt = `
-// Give short feedback.
-
-// Return STRICT JSON:
-// {
-//  "strengths":"text",
-//  "weaknesses":"text",
-//  "improvementPlan":"text",
-//  "aiAdvice":"text"
-// }
-// `;
-
-//   const aiText = await callGemini(prompt);
-//   return extractJSON(aiText);
-// };
-
-
-// /* ==================================================
-//    AI INTERVIEW ENGINE
-// ================================================== */
-
-// const generateInterviewResponse = async (history, currentMessage, jobRole, difficulty) => {
-//   const prompt = `
-//     You are an expert technical interviewer for the role of ${jobRole}.
-//     Difficulty Level: ${difficulty}.
-    
-//     Current Conversation History:
-//     ${history.map(h => `${h.role === 'user' ? 'Candidate' : 'Interviewer'}: ${h.text}`).join("\n")}
-    
-//     Candidate's Latest Response: "${currentMessage}"
-    
-//     Task: 
-//     1. Analyze the candidate's response for technical accuracy.
-//     2. Provide a very brief feedback/acknowledgment.
-//     3. Ask the NEXT logical technical or behavioral question to continue the interview.
-    
-//     Return STRICT JSON:
-//     {
-//       "feedback": "Short feedback on previous answer",
-//       "nextQuestion": "The next interview question",
-//       "isEnd": false
-//     }
-//   `;
-
-//   const aiText = await callGemini(prompt);
-//   return extractJSON(aiText);
-// };
-
-
-// /* ==================================================
-//    EXPORTS
-// ================================================== */
-
-// module.exports = {
-//   generateQuestionsAI,
-//   generateQuestionWiseReview,
-//   generateTutorFeedback,
-//   generateInterviewResponse
-// };
-
-
-
-
 const axios = require("axios");
 
-console.log("Loaded Gemini Key:", process.env.GEMINI_API_KEY);
+console.log("Loaded Gemini Key:", process.env.GEMINI_API_KEY ? "✅ Found" : "❌ Missing");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 const GEMINI_URL =
-`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 
 /* ==================================================
    GEMINI QUEUE (ANTI RATE LIMIT)
+   - Uses separate queues for interview vs quiz so
+     they cannot starve each other
+   - rejects with proper Error objects (not plain objects)
+     so controller instanceof / .status checks work reliably
 ================================================== */
 
-const requestQueue = [];
-let isProcessing = false;
-const QUEUE_DELAY = 2500;
+const createQueue = (delayMs = 2500) => {
+  const queue = [];
+  let processing = false;
 
-const processQueue = async () => {
+  const process = async () => {
+    if (processing || queue.length === 0) return;
+    processing = true;
 
-  if (isProcessing || requestQueue.length === 0) return;
+    const { prompt, resolve, reject } = queue.shift();
 
-  isProcessing = true;
+    try {
+      const response = await axios.post(
+        GEMINI_URL,
+        {
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.6,
+            maxOutputTokens: 4096
+          }
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
 
-  const item = requestQueue.shift();
-  const { prompt, resolve, reject } = item;
+      const text = response?.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error("Invalid Gemini response: no text returned");
+      resolve(text);
 
-  try {
-
-    const response = await axios.post(
-      GEMINI_URL,
-      {
-        contents: [
-          { role: "user", parts: [{ text: prompt }] }
-        ],
-        generationConfig: {
-          temperature: 0.6,
-          maxOutputTokens: 4096
-        }
-      },
-      { headers: { "Content-Type": "application/json" } }
-    );
-
-    const text = response?.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!text) throw new Error("Invalid Gemini response");
-
-    resolve(text);
-
-  } catch (error) {
-    // 🔥 NEW: Specifically identify 429 status
-    if (error.response && error.response.status === 429) {
-        reject({ status: 429, message: "Limit Reached" });
-    } else {
+    } catch (error) {
+      // Reject with a proper Error so .status and .message are both reliable
+      if (error.response && error.response.status === 429) {
+        const rpmError = new Error("RPM Limit Reached");
+        rpmError.status = 429;
+        reject(rpmError);
+      } else {
         reject(error);
+      }
+    } finally {
+      setTimeout(() => {
+        processing = false;
+        process();
+      }, delayMs);
     }
-  } finally {
-    setTimeout(() => {
-      isProcessing = false;
-      processQueue();
-    }, QUEUE_DELAY);
-  }
+  };
+
+  const enqueue = (prompt) =>
+    new Promise((resolve, reject) => {
+      queue.push({ prompt, resolve, reject });
+      process();
+    });
+
+  return enqueue;
 };
 
-const callGemini = (prompt) =>
-  new Promise((resolve, reject) => {
-    requestQueue.push({ prompt, resolve, reject });
-    processQueue();
-  });
+// Separate queues: interview gets priority (lower delay), quiz runs independently
+const callGeminiInterview = createQueue(2000);
+const callGeminiQuiz = createQueue(2500);
 
 
 /* ==================================================
@@ -593,7 +79,6 @@ const callGemini = (prompt) =>
 ================================================== */
 
 const extractJSON = (text) => {
-
   const cleaned = text
     .replace(/```json/gi, "")
     .replace(/```/g, "")
@@ -603,7 +88,7 @@ const extractJSON = (text) => {
   const end = cleaned.lastIndexOf("}");
 
   if (start === -1 || end === -1)
-    throw new Error("No JSON found");
+    throw new Error("No JSON object found in Gemini response");
 
   return JSON.parse(cleaned.slice(start, end + 1));
 };
@@ -614,7 +99,6 @@ const extractJSON = (text) => {
 ================================================== */
 
 const generateQuestionsAI = async (topic, difficulty) => {
-
   const prompt = `
 Generate EXACTLY 10 questions.
 Topic: ${topic}
@@ -622,25 +106,25 @@ Difficulty: ${difficulty}
 
 Return STRICT JSON:
 {
- "questions":[
-  {
-   "type":"mcq",
-   "text":"question",
-   "options":["A","B","C","D"],
-   "correctAnswer":"A",
-   "concept":"Topic"
-  },
-  {
-   "type":"subjective",
-   "text":"question",
-   "correctAnswer":"Expected explanation",
-   "concept":"Topic"
-  }
- ]
+  "questions": [
+    {
+      "type": "mcq",
+      "text": "question",
+      "options": ["A", "B", "C", "D"],
+      "correctAnswer": "A",
+      "concept": "Topic"
+    },
+    {
+      "type": "subjective",
+      "text": "question",
+      "correctAnswer": "Expected explanation",
+      "concept": "Topic"
+    }
+  ]
 }
 `;
 
-  const aiText = await callGemini(prompt);
+  const aiText = await callGeminiQuiz(prompt);
   return extractJSON(aiText);
 };
 
@@ -650,36 +134,23 @@ Return STRICT JSON:
 ================================================== */
 
 const generateQuestionWiseReview = async (questions, answers) => {
-
   const reviews = [];
 
   for (let i = 0; i < questions.length; i++) {
-
     const q = questions[i];
     const userAnswer = answers[i];
 
-    // ---------- MCQ ----------
     if (q.type === "mcq") {
-
       const isCorrect = userAnswer === q.correctAnswer;
-
-      if (isCorrect) {
-        reviews[i] = {
-          status: "correct"
-        };
-      } else {
-        reviews[i] = {
-          status: "wrong",
-          userAnswer: userAnswer || "No Answer",
-          correctAnswer: q.correctAnswer,
-          explanation: `Correct answer is "${q.correctAnswer}".`
-        };
-      }
-
-    } 
-    // ---------- SUBJECTIVE ----------
-    else {
-
+      reviews[i] = isCorrect
+        ? { status: "correct" }
+        : {
+            status: "wrong",
+            userAnswer: userAnswer || "No Answer",
+            correctAnswer: q.correctAnswer,
+            explanation: `Correct answer is "${q.correctAnswer}".`
+          };
+    } else {
       const prompt = `
 Evaluate the answer.
 
@@ -689,16 +160,13 @@ UserAnswer: ${userAnswer}
 
 Return STRICT JSON:
 {
- "status":"correct | wrong",
- "explanation":"short explanation",
- "correctAnswer":"improved correct answer"
+  "status": "correct | wrong",
+  "explanation": "short explanation",
+  "correctAnswer": "improved correct answer"
 }
 `;
-
-      const aiText = await callGemini(prompt);
-      const aiData = extractJSON(aiText);
-
-      reviews[i] = aiData;
+      const aiText = await callGeminiQuiz(prompt);
+      reviews[i] = extractJSON(aiText);
     }
   }
 
@@ -710,58 +178,99 @@ Return STRICT JSON:
    TUTOR FEEDBACK
 ================================================== */
 
-const generateTutorFeedback = async (
-  topic,
-  difficulty,
-  score,
-  weakAreas
-) => {
-
+const generateTutorFeedback = async (topic, difficulty, score, weakAreas) => {
   const prompt = `
-Give short feedback.
+Give short feedback for a student.
+Topic: ${topic}
+Difficulty: ${difficulty}
+Score: ${score}
+Weak Areas: ${weakAreas}
 
 Return STRICT JSON:
 {
- "strengths":"text",
- "weaknesses":"text",
- "improvementPlan":"text",
- "aiAdvice":"text"
+  "strengths": "text",
+  "weaknesses": "text",
+  "improvementPlan": "text",
+  "aiAdvice": "text"
 }
 `;
 
-  const aiText = await callGemini(prompt);
+  const aiText = await callGeminiQuiz(prompt);
   return extractJSON(aiText);
 };
 
 
 /* ==================================================
    AI INTERVIEW ENGINE
+
+   Difficulty behaviour:
+   - Easy:   Beginner-friendly, conceptual, forgiving tone
+   - Medium: Standard technical + behavioural mix
+   - Hard:   Deep-dive, follow-up on gaps, no hints
+
+   The full conversation history is embedded as structured
+   turns in the prompt so Gemini maintains context across
+   the session without multi-turn API calls.
 ================================================== */
 
-const generateInterviewResponse = async (history, currentMessage, jobRole, difficulty) => {
-  const prompt = `
-    You are an expert technical interviewer for the role of ${jobRole}.
-    Difficulty Level: ${difficulty}.
-    
-    Current Conversation History:
-    ${history.map(h => `${h.role === 'user' ? 'Candidate' : 'Interviewer'}: ${h.text}`).join("\n")}
-    
-    Candidate's Latest Response: "${currentMessage}"
-    
-    Task: 
-    1. Analyze the candidate's response for technical accuracy.
-    2. Provide a very brief feedback/acknowledgment.
-    3. Ask the NEXT logical technical or behavioral question to continue the interview.
-    
-    Return STRICT JSON:
-    {
-      "feedback": "Short feedback on previous answer",
-      "nextQuestion": "The next interview question",
-      "isEnd": false
-    }
-  `;
+const DIFFICULTY_INSTRUCTIONS = {
+  Easy: `
+- Ask beginner-friendly questions on fundamentals.
+- Keep questions clear and concise with no ambiguity.
+- Be encouraging in your feedback tone.
+- Do NOT ask trick questions or deep algorithmic problems.
+- If the answer is partially correct, acknowledge what was right.`,
 
-  const aiText = await callGemini(prompt);
+  Medium: `
+- Mix technical questions with behavioural (STAR-format) ones.
+- Ask follow-up questions if an answer is vague or incomplete.
+- Keep a professional, neutral tone in feedback.
+- Expect solid understanding, not expert-level depth.`,
+
+  Hard: `
+- Ask advanced, nuanced, or system-design-level questions.
+- Critically analyse the candidate's answer for gaps or assumptions.
+- Do NOT give hints or simplify questions.
+- Apply pressure through realistic follow-ups like a senior engineer would.
+- Reward precision; note any hand-waving or vague answers.`
+};
+
+const generateInterviewResponse = async (history, currentMessage, jobRole, difficulty, domain) => {
+  const difficultyGuide = DIFFICULTY_INSTRUCTIONS[difficulty] || DIFFICULTY_INSTRUCTIONS["Medium"];
+
+  const historyText = history.length > 0
+    ? history
+        .map(h => `${h.role === "user" ? "Candidate" : "Interviewer"}: ${h.text}`)
+        .join("\n")
+    : "No prior conversation yet.";
+
+  const prompt = `
+You are an expert technical interviewer conducting a ${difficulty}-level interview.
+Job Role: ${jobRole}
+Domain / Field: ${domain || "General Technology"}
+
+Difficulty Instructions:
+${difficultyGuide}
+
+Conversation so far:
+${historyText}
+
+Candidate's latest response: "${currentMessage}"
+
+Your tasks:
+1. Briefly acknowledge or give feedback on the candidate's response (1-2 sentences, match the difficulty tone).
+2. Ask the next logical interview question suited to the role, domain, and difficulty level.
+3. Set "isEnd" to true ONLY if 10 or more exchanges have happened OR if the candidate explicitly asks to end the interview.
+
+Return STRICT JSON only — no markdown, no preamble:
+{
+  "feedback": "Short feedback on the candidate's previous answer",
+  "nextQuestion": "The next interview question",
+  "isEnd": false
+}
+`;
+
+  const aiText = await callGeminiInterview(prompt);
   return extractJSON(aiText);
 };
 
